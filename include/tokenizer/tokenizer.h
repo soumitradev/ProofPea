@@ -10,6 +10,8 @@
 #include <variant>
 #include <vector>
 
+namespace tokenizer {
+
 struct Token {
   util::symbols::SymbolType type;
   std::string lexeme;
@@ -19,4 +21,7 @@ struct Token {
 std::variant<std::vector<Token>, error::tokenizer::invalid_symbol,
              error::unknown::unknown_error>
 tokenize(std::string const formula);
+
+}  // namespace tokenizer
+
 #endif  // CNF_CONVERTOR_TOKENIZER

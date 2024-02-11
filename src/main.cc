@@ -14,12 +14,13 @@ int main() {
   logger::Logger::dispatchLog(
       logger::infoLog{log : "User entered formula: " + formula});
 
-  const std::variant<std::vector<Token>, error::tokenizer::invalid_symbol,
+  const std::variant<std::vector<tokenizer::Token>,
+                     error::tokenizer::invalid_symbol,
                      error::unknown::unknown_error>
-      tokens = tokenize(formula);
+      tokens = tokenizer::tokenize(formula);
 
-  if (std::holds_alternative<std::vector<Token>>(tokens)) {
-    const auto tokenVector = std::get<std::vector<Token>>(tokens);
+  if (std::holds_alternative<std::vector<tokenizer::Token>>(tokens)) {
+    const auto tokenVector = std::get<std::vector<tokenizer::Token>>(tokens);
     for (size_t i = 0; i < tokenVector.size(); i++) {
       std::cout << tokenVector[i].lexeme << "\t";
     }

@@ -1,5 +1,7 @@
 #include <tokenizer/tokenizer.h>
 
+namespace tokenizer {
+
 std::variant<Token, util::symbols::end_of_formula,
              error::tokenizer::invalid_symbol>
 getNextToken(std::string::const_iterator start, std::string::const_iterator ptr,
@@ -95,3 +97,5 @@ tokenize(std::string const formula) {
 
   return tokens;
 }
+
+}  // namespace tokenizer

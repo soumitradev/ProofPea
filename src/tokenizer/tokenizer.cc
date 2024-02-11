@@ -38,7 +38,7 @@ getNextToken(std::string::const_iterator start, std::string::const_iterator ptr,
         default:
           std::stringstream ss;
           ss << "Unexpected symbol at character: " << position
-             << ", found: " << *ptr << std::endl;
+             << ", found: " << *ptr;
           return error::tokenizer::invalid_symbol(ss.str());
           break;
       }
@@ -48,8 +48,7 @@ getNextToken(std::string::const_iterator start, std::string::const_iterator ptr,
     return Token{util::symbols::ATOM, util::symbols::getAtom(ptr), position};
   } else {
     std::stringstream ss;
-    ss << "Invalid symbol at character: " << position << ", found: " << *ptr
-       << std::endl;
+    ss << "Invalid symbol at character: " << position << ", found: " << *ptr;
     return error::tokenizer::invalid_symbol(ss.str());
   }
 }

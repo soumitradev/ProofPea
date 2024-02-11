@@ -10,7 +10,13 @@
 #include <variant>
 #include <vector>
 
-std::variant<std::vector<std::string>, error::tokenizer::invalid_symbol,
+struct Token {
+  util::symbols::SymbolType type;
+  std::string lexeme;
+  size_t position;
+};
+
+std::variant<std::vector<Token>, error::tokenizer::invalid_symbol,
              error::unknown::unknown_error>
 tokenize(std::string const formula);
 #endif  // CNF_CONVERTOR_TOKENIZER

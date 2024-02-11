@@ -1,6 +1,6 @@
 #include <tokenizer/tokenizer.h>
 
-std::variant<std::string, util::symbols::end_of_formula,
+std::variant<Token, util::symbols::end_of_formula,
              error::tokenizer::invalid_symbol>
 getNextToken(std::string::const_iterator start, std::string::const_iterator ptr,
              std::string::const_iterator end) {
@@ -8,26 +8,54 @@ getNextToken(std::string::const_iterator start, std::string::const_iterator ptr,
     return util::symbols::end_of_formula();
   }
 
+  const size_t position = std::distance(start, ptr);
+
   if (util::symbols::checkFirstCharacterOfSymbol(*ptr)) {
     if (util::symbols::checkLongerSymbol(*ptr)) {
-      return util::symbols::getLongerSymbol(ptr);
+      return Token{util::symbols::IMPL, util::symbols::getLongerSymbol(ptr),
+                   position};
     } else {
-      return std::string(1, *ptr);
+      util::symbols::SymbolType type;
+      switch (*ptr) {
+        case '~':
+          type = util::symbols::NEG;
+          break;
+        case '*':
+          type = util::symbols::CONJUNCT;
+          break;
+        case '+':
+          type = util::symbols::DISJUNCT;
+          break;
+        case '(':
+          type = util::symbols::LBRACE;
+          break;
+        case ')':
+          type = util::symbols::RBRACE;
+          break;
+
+        default:
+          std::stringstream ss;
+          ss << "Unexpected symbol at character: " << position
+             << ", found: " << *ptr << std::endl;
+          return error::tokenizer::invalid_symbol(ss.str());
+          break;
+      }
+      return Token{type, std::string(1, *ptr), position};
     }
   } else if (util::symbols::checkAtom(*ptr)) {
-    return util::symbols::getAtom(ptr);
+    return Token{util::symbols::ATOM, util::symbols::getAtom(ptr), position};
   } else {
     std::stringstream ss;
-    ss << "Invalid symbol at character: " << std::distance(start, ptr)
-       << ", found: " << *ptr << std::endl;
+    ss << "Invalid symbol at character: " << position << ", found: " << *ptr
+       << std::endl;
     return error::tokenizer::invalid_symbol(ss.str());
   }
 }
 
-std::variant<std::vector<std::string>, error::tokenizer::invalid_symbol,
+std::variant<std::vector<Token>, error::tokenizer::invalid_symbol,
              error::unknown::unknown_error>
 tokenize(std::string const formula) {
-  std::vector<std::string> tokens;
+  std::vector<Token> tokens;
 
   auto ptr = formula.begin();
   while (ptr != formula.end()) {
@@ -41,13 +69,15 @@ tokenize(std::string const formula) {
       }
     }
     const auto next = getNextToken(formula.begin(), ptr, formula.end());
-    if (std::holds_alternative<std::string>(next)) {
-      const auto token = std::get<std::string>(next);
+    if (std::holds_alternative<Token>(next)) {
+      const auto token = std::get<Token>(next);
+
       tokens.push_back(token);
-      ptr += token.length();
+      ptr += token.lexeme.length();
+
       logger::Logger::dispatchLog(logger::debugLog{
-        log : "Detected token: " + token +
-        " at: " + std::to_string(std::distance(formula.begin(), ptr))
+        log : "Detected token: " + token.lexeme +
+        " at: " + std::to_string(token.position)
       });
     } else if (std::holds_alternative<util::symbols::end_of_formula>(next)) {
       logger::Logger::dispatchLog(logger::

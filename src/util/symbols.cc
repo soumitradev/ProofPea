@@ -3,8 +3,15 @@
 namespace util {
 namespace symbols {
 
-const std::string symbolList[] = {"(", ")", "^", "+", "~", "->"};
-const char firstCharacterSymbols[] = {'(', ')', '^', '+', '~', '-'};
+std::string IMPL_STR = "->";
+char DISJUNCT_STR = '+';
+char CONJUNCT_STR = '*';
+char NEG_STR = '~';
+char LBRACE_STR = '(';
+char RBRACE_STR = ')';
+
+const char firstCharacterSymbols[] = {LBRACE_STR,   RBRACE_STR,   NEG_STR,
+                                      CONJUNCT_STR, DISJUNCT_STR, IMPL_STR[0]};
 
 bool checkFirstCharacterOfSymbol(char target) {
   bool found = false;
@@ -17,7 +24,7 @@ bool checkFirstCharacterOfSymbol(char target) {
   return found;
 }
 
-bool checkLongerSymbol(char target) { return target == '-'; }
+bool checkLongerSymbol(char target) { return target == IMPL_STR[0]; }
 
 bool checkAtom(char target) {
   return ((target >= 65) && (target <= 90)) ||

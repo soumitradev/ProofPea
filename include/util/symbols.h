@@ -7,6 +7,8 @@
 namespace util {
 namespace symbols {
 
+enum SymbolType { IMPL, DISJUNCT, CONJUNCT, NEG, LBRACE, RBRACE, ATOM };
+
 bool checkFirstCharacterOfSymbol(char target);
 bool checkLongerSymbol(char target);
 bool checkAtom(char target);

@@ -4,7 +4,7 @@
 #include <error/tokenizer.h>
 #include <error/unknown.h>
 #include <logger/logger.h>
-#include <tokenizer.h>
+#include <tokenizer/tokenizer.h>
 
 #include <iostream>
 #include <variant>

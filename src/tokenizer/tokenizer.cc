@@ -1,4 +1,4 @@
-#include <tokenizer.h>
+#include <tokenizer/tokenizer.h>
 
 std::variant<std::string, util::symbols::end_of_formula,
              error::tokenizer::invalid_symbol>

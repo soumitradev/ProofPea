@@ -13,6 +13,9 @@ char RBRACE_STR = ')';
 const char firstCharacterSymbols[] = {LBRACE_STR,   RBRACE_STR,   NEG_STR,
                                       CONJUNCT_STR, DISJUNCT_STR, IMPL_STR[0]};
 
+std::string SymbolTypeArray[]{"IMPL",   "DISJUNCT", "CONJUNCT", "NEG",
+                              "LBRACE", "RBRACE",   "ATOM"};
+
 bool checkFirstCharacterOfSymbol(char target) {
   bool found = false;
   for (char c : firstCharacterSymbols) {

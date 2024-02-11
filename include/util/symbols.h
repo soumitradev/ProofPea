@@ -9,6 +9,8 @@ namespace symbols {
 
 enum SymbolType { IMPL, DISJUNCT, CONJUNCT, NEG, LBRACE, RBRACE, ATOM };
 
+extern std::string SymbolTypeArray[];
+
 bool checkFirstCharacterOfSymbol(char target);
 bool checkLongerSymbol(char target);
 bool checkAtom(char target);

@@ -1,6 +1,8 @@
 #ifndef CNF_CONVERTOR_UTIL_SYMBOLS
 #define CNF_CONVERTOR_UTIL_SYMBOLS
 
+#include <logger/logger.h>
+
 #include <iostream>
 #include <string>
 
@@ -16,7 +18,8 @@ bool checkLongerSymbol(char target);
 bool checkAtom(char target);
 bool checkWhitespace(char target);
 std::string getLongerSymbol(std::string::const_iterator ptr);
-std::string getAtom(std::string::const_iterator ptr);
+std::string getAtom(std::string::const_iterator ptr,
+                    std::string::const_iterator end);
 
 struct end_of_formula {
   std::string message;

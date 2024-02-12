@@ -42,13 +42,14 @@ std::string getLongerSymbol(std::string::const_iterator ptr) {
   return std::string{*ptr, *(ptr + 1)};
 }
 
-std::string getAtom(std::string::const_iterator ptr) {
+std::string getAtom(std::string::const_iterator ptr,
+                    std::string::const_iterator end) {
   std::string atom;
   atom.push_back(*ptr);
-  auto ptrEnd = ptr + 1;
-  while ((*ptrEnd >= 48) && (*ptrEnd <= 57)) {
-    atom.push_back(*ptrEnd);
-    ptrEnd++;
+  ptr++;
+  while ((ptr < end) && (*ptr >= (char)48) && (*ptr <= (char)57)) {
+    atom.push_back(*ptr);
+    ptr++;
   }
   return atom;
 }

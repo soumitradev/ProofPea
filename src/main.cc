@@ -14,20 +14,8 @@ int main() {
   logger::Logger::dispatchLog(
       logger::infoLog{log : "User entered formula: " + formula});
 
-  const std::variant<std::vector<tokenizer::Token>,
-                     error::tokenizer::invalid_symbol,
-                     error::unknown::unknown_error>
-      tokens = tokenizer::tokenize(formula);
-
-  if (std::holds_alternative<std::vector<tokenizer::Token>>(tokens)) {
-    const auto tokenVector = std::get<std::vector<tokenizer::Token>>(tokens);
-    for (size_t i = 0; i < tokenVector.size(); i++) {
-      std::cout << tokenVector[i].lexeme << "\t";
-    }
-    std::cout << std::endl;
-    logger::Logger::dispatchLog(logger::
-                                infoLog{log : "Finished outputting tokens"});
-  } else if (std::holds_alternative<error::tokenizer::invalid_symbol>(tokens)) {
+  const auto tokens = tokenizer::tokenize(formula);
+  if (std::holds_alternative<error::tokenizer::invalid_symbol>(tokens)) {
     const auto error = std::get<error::tokenizer::invalid_symbol>(tokens);
     logger::Logger::dispatchLog(logger::errorLog{error : error});
     return 22;
@@ -35,12 +23,24 @@ int main() {
     const auto error = std::get<error::unknown::unknown_error>(tokens);
     logger::Logger::dispatchLog(logger::errorLog{error : error});
     return 125;
-  } else {
+  } else if (!std::holds_alternative<std::vector<tokenizer::Token>>(tokens)) {
     logger::Logger::dispatchLog(logger::errorLog{
       error : error::unknown::unknown_error(
           "Unknown tokens alternative returned by tokenize()")
     });
     return 125;
   }
+
+  const auto tokenVector = std::get<std::vector<tokenizer::Token>>(tokens);
+  for (size_t i = 0; i < tokenVector.size(); i++) {
+    std::cout << tokenVector[i].lexeme << "\t";
+  }
+
+  std::cout << std::endl;
+  logger::Logger::dispatchLog(logger::
+                              infoLog{log : "Finished outputting tokens"});
+  const auto syntaxTree = parser::parseAST(tokenVector);
+  parser::deallocAST(syntaxTree);
+  delete syntaxTree;
   return 0;
 }

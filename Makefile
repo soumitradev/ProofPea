@@ -8,6 +8,7 @@ MAKE_DIR = @mkdir -p $(@D)
 
 CFLAGS = -std=c++17         \
 		 -g                 \
+		 -O1                \
 		 -I ./include/
 
 EXECUTABLE = build/main

@@ -45,7 +45,7 @@ std::string getLongerSymbol(std::string::const_iterator ptr) {
 std::string getAtom(std::string::const_iterator ptr) {
   std::string atom;
   atom.push_back(*ptr);
-  std::string::const_iterator ptrEnd = ptr + 1;
+  auto ptrEnd = ptr + 1;
   while ((*ptrEnd >= 48) && (*ptrEnd <= 57)) {
     atom.push_back(*ptrEnd);
     ptrEnd++;

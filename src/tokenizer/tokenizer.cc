@@ -14,9 +14,17 @@ getNextToken(std::string::const_iterator start, std::string::const_iterator ptr,
 
   if (util::symbols::checkFirstCharacterOfSymbol(*ptr)) {
     if (util::symbols::checkLongerSymbol(*ptr)) {
+      logger::Logger::dispatchLog(logger::debugLog{
+        log : "Classified incoming token as long symbol at position " +
+        std::to_string(std::distance(start, ptr))
+      });
       return Token{util::symbols::IMPL, util::symbols::getLongerSymbol(ptr),
                    position};
     } else {
+      logger::Logger::dispatchLog(logger::debugLog{
+        log : "Classified incoming token as short symbol at position " +
+        std::to_string(std::distance(start, ptr))
+      });
       util::symbols::SymbolType type;
       switch (*ptr) {
         case '~':
@@ -45,7 +53,12 @@ getNextToken(std::string::const_iterator start, std::string::const_iterator ptr,
       return Token{type, std::string(1, *ptr), position};
     }
   } else if (util::symbols::checkAtom(*ptr)) {
-    return Token{util::symbols::ATOM, util::symbols::getAtom(ptr), position};
+    logger::Logger::dispatchLog(logger::debugLog{
+      log : "Classified incoming token as atom at position " +
+      std::to_string(std::distance(start, ptr))
+    });
+    return Token{util::symbols::ATOM, util::symbols::getAtom(ptr, end),
+                 position};
   } else {
     std::stringstream ss;
     ss << "Invalid symbol at character: " << position << ", found: " << *ptr;

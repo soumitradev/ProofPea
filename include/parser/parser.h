@@ -5,6 +5,7 @@
 #include <tokenizer/tokenizer.h>
 
 #include <iostream>
+#include <unordered_map>
 #include <variant>
 
 namespace parser {

@@ -2,6 +2,8 @@
 
 namespace parser {
 
+std::unordered_map<std::string, Node*> atom_map;
+
 std::variant<std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>,
              error::parser::unexpected_token>
 primary(const std::vector<tokenizer::Token>& tokens,
@@ -15,8 +17,20 @@ primary(const std::vector<tokenizer::Token>& tokens,
         "Detected atom " + tokenPtr->lexeme + " at " +
         std::to_string(std::distance(tokens.begin(), tokenPtr))});
 
+    const auto atomNodePtr = atom_map.find(tokenPtr->lexeme);
+    if (atomNodePtr != atom_map.end()) {
+      logger::Logger::dispatchLog(
+          logger::debugLog{"Found atom " + tokenPtr->lexeme + " in hash-map"});
+      return std::make_pair(atomNodePtr->second, tokenPtr + 1);
+    }
+
+    logger::Logger::dispatchLog(
+        logger::debugLog{"Did not find atom " + tokenPtr->lexeme +
+                         " in hash-map, creating and inserting"});
+
     const auto atom = new Atom{tokenPtr.base()};
     const auto atomNode = new Node{parser::ATOM, atom};
+    atom_map[tokenPtr->lexeme] = atomNode;
 
     return std::make_pair(atomNode, tokenPtr + 1);
   }
@@ -239,8 +253,10 @@ std::variant<Node*, error::parser::unexpected_token> parseAST(
     const std::vector<tokenizer::Token>& tokens) {
   logger::Logger::dispatchLog(logger::infoLog{"Starting to parse AST"});
   const auto tokenPtr = tokens.cbegin();
+  atom_map.clear();
 
   const auto exprResult = expression(tokens, tokenPtr);
+  atom_map.clear();
   if (std::holds_alternative<error::parser::unexpected_token>(exprResult)) {
     const auto exprError =
         std::get<error::parser::unexpected_token>(exprResult);
@@ -265,6 +281,7 @@ std::variant<Node*, error::parser::unexpected_token> parseAST(
 }
 
 void deallocAST(const Node* root) {
+  atom_map.clear();
   if (root->type == parser::ATOM) {
     auto ptr = std::get<const parser::Atom*>(root->node);
     delete ptr;

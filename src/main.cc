@@ -47,6 +47,5 @@ int main() {
   }
   const auto syntaxTree = std::get<const parser::Node*>(syntaxTreeResult);
   parser::deallocAST(syntaxTree);
-  delete syntaxTree;
   return 0;
 }

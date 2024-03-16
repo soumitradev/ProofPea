@@ -48,14 +48,15 @@ This project uses the C++ 2017 standard with a GCC compiler. Portability is not 
 
 ## References
 
-For now I don't really have any other references other than the book "Logic in Computer Science" by Michael Huth and Mark Ryan. However, one really cool resource I found that I haven't used yet, but could help me in the future:
-
-- https://www.inf.ed.ac.uk/teaching/courses/lp/2012/slides/lpTheory1.pdf
-- https://www.inf.ed.ac.uk/teaching/courses/lp/2012/slides/lpTheory2.pdf
-- https://www.inf.ed.ac.uk/teaching/courses/lp/2012/slides/lpTheory3.pdf
-- https://www.inf.ed.ac.uk/teaching/courses/lp/2012/slides/lpTheory4.pdf
-- https://www.inf.ed.ac.uk/teaching/courses/lp/2012/slides/lpTheory5.pdf
-- https://www.inf.ed.ac.uk/teaching/courses/lp/2012/slides/lpTheory6.pdf
-- https://www.inf.ed.ac.uk/teaching/courses/lp/2012/slides/lpTheory7.pdf
-- https://www.inf.ed.ac.uk/teaching/courses/lp/2012/slides/lpTheory8.pdf
-- https://www.inf.ed.ac.uk/teaching/courses/lp/2012/slides/lpTheory9.pdf
+- Top Down (Recursive Descent) Parser concepts from https://craftinginterpreters.com/parsing-expressions.html
+- "Logic in Computer Science" by Michael Huth and Mark Ryan.
+- Another really cool resource I found that I haven't used yet, but could help me in the future:
+  - https://www.inf.ed.ac.uk/teaching/courses/lp/2012/slides/lpTheory1.pdf
+  - https://www.inf.ed.ac.uk/teaching/courses/lp/2012/slides/lpTheory2.pdf
+  - https://www.inf.ed.ac.uk/teaching/courses/lp/2012/slides/lpTheory3.pdf
+  - https://www.inf.ed.ac.uk/teaching/courses/lp/2012/slides/lpTheory4.pdf
+  - https://www.inf.ed.ac.uk/teaching/courses/lp/2012/slides/lpTheory5.pdf
+  - https://www.inf.ed.ac.uk/teaching/courses/lp/2012/slides/lpTheory6.pdf
+  - https://www.inf.ed.ac.uk/teaching/courses/lp/2012/slides/lpTheory7.pdf
+  - https://www.inf.ed.ac.uk/teaching/courses/lp/2012/slides/lpTheory8.pdf
+  - https://www.inf.ed.ac.uk/teaching/courses/lp/2012/slides/lpTheory9.pdf

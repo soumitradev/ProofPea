@@ -39,7 +39,13 @@ int main() {
   std::cout << std::endl;
   logger::Logger::dispatchLog(logger::
                               infoLog{log : "Finished outputting tokens"});
-  const auto syntaxTree = parser::parseAST(tokenVector);
+  const auto syntaxTreeResult = parser::parseAST(tokenVector);
+  if (std::holds_alternative<error::parser::unexpected_token>(
+          syntaxTreeResult)) {
+    const auto error =
+        std::get<error::parser::unexpected_token>(syntaxTreeResult);
+  }
+  const auto syntaxTree = std::get<parser::Node*>(syntaxTreeResult);
   parser::deallocAST(syntaxTree);
   delete syntaxTree;
   return 0;

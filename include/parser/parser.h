@@ -1,9 +1,11 @@
 #ifndef CNF_CONVERTOR_PARSE_TREE
 #define CNF_CONVERTOR_PARSE_TREE
 
+#include <error/parser.h>
 #include <tokenizer/tokenizer.h>
 
 #include <iostream>
+#include <variant>
 
 namespace parser {
 
@@ -31,11 +33,13 @@ struct Node {
       node;
 };
 
-std::pair<Node *, std::vector<tokenizer::Token>::const_iterator> expression(
-    const std::vector<tokenizer::Token> &tokens,
-    std::vector<tokenizer::Token>::const_iterator tokenPtr);
+std::variant<std::pair<Node *, std::vector<tokenizer::Token>::const_iterator>,
+             error::parser::unexpected_token>
+expression(const std::vector<tokenizer::Token> &tokens,
+           std::vector<tokenizer::Token>::const_iterator tokenPtr);
 
-Node *parseAST(const std::vector<tokenizer::Token> &tokens);
+std::variant<Node *, error::parser::unexpected_token> parseAST(
+    const std::vector<tokenizer::Token> &tokens);
 
 void deallocAST(const Node *root);
 

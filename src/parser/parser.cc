@@ -2,9 +2,10 @@
 
 namespace parser {
 
-std::pair<Node*, std::vector<tokenizer::Token>::const_iterator> primary(
-    const std::vector<tokenizer::Token>& tokens,
-    std::vector<tokenizer::Token>::const_iterator tokenPtr) {
+std::variant<std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>,
+             error::parser::unexpected_token>
+primary(const std::vector<tokenizer::Token>& tokens,
+        std::vector<tokenizer::Token>::const_iterator tokenPtr) {
   logger::Logger::dispatchLog(logger::debugLog{
       "Checking for primary token at " +
       std::to_string(std::distance(tokens.begin(), tokenPtr))});
@@ -26,27 +27,42 @@ std::pair<Node*, std::vector<tokenizer::Token>::const_iterator> primary(
         std::to_string(std::distance(tokens.begin(), tokenPtr))});
 
     const auto groupingResult = expression(tokens, tokenPtr + 1);
-    if (groupingResult.second < tokens.end()) {
-      if (groupingResult.second->type != util::symbols::RBRACE) {
+    if (std::holds_alternative<error::parser::unexpected_token>(
+            groupingResult)) {
+      const auto groupingError =
+          std::get<error::parser::unexpected_token>(groupingResult);
+      return groupingError;
+    }
+
+    const auto groupedExpr = std::get<
+        std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>>(
+        groupingResult);
+    if (groupedExpr.second < tokens.end()) {
+      if (groupedExpr.second->type != util::symbols::RBRACE) {
         logger::Logger::dispatchLog(logger::errorLog{error::error{
             "Expected \")\" after expression with \"(\", but found \"" +
-                groupingResult.second->lexeme + "\"",
+                groupedExpr.second->lexeme + "\"",
             "Invalid Grouping syntax"}});
       }
-      return std::make_pair(groupingResult.first, groupingResult.second + 1);
+      return std::make_pair(groupedExpr.first, groupedExpr.second + 1);
     } else {
       logger::Logger::dispatchLog(logger::errorLog{
           error::error{"Expected \")\" after expression with \"(\", but "
                        "expression terminated prematurely",
                        "Invalid Grouping syntax"}});
-      return groupingResult;
+      return groupedExpr;
     }
   }
+  return error::parser::unexpected_token{
+      "Expected primary token at position " +
+      std::to_string(std::distance(tokens.begin(), tokenPtr)) + ", found " +
+      tokenPtr->lexeme};
 }
 
-std::pair<Node*, std::vector<tokenizer::Token>::const_iterator> negation(
-    const std::vector<tokenizer::Token>& tokens,
-    std::vector<tokenizer::Token>::const_iterator tokenPtr) {
+std::variant<std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>,
+             error::parser::unexpected_token>
+negation(const std::vector<tokenizer::Token>& tokens,
+         std::vector<tokenizer::Token>::const_iterator tokenPtr) {
   logger::Logger::dispatchLog(logger::debugLog{
       "Checking for negation at " +
       std::to_string(std::distance(tokens.begin(), tokenPtr))});
@@ -55,72 +71,134 @@ std::pair<Node*, std::vector<tokenizer::Token>::const_iterator> negation(
         "Found negation at " +
         std::to_string(std::distance(tokens.begin(), tokenPtr))});
     auto negationResult = negation(tokens, tokenPtr + 1);
+    if (std::holds_alternative<error::parser::unexpected_token>(
+            negationResult)) {
+      const auto negationError =
+          std::get<error::parser::unexpected_token>(negationResult);
+      return negationError;
+    }
+
+    const auto negationExpr = std::get<
+        std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>>(
+        negationResult);
     const auto operatorStruct =
-        new UnaryOperator{tokenPtr.base(), negationResult.first};
+        new UnaryOperator{tokenPtr.base(), negationExpr.first};
     const auto expr = new Node{parser::UNARY, operatorStruct};
-    return std::make_pair(expr, negationResult.second);
+    return std::make_pair(expr, negationExpr.second);
   }
 
   return primary(tokens, tokenPtr);
 }
 
-std::pair<Node*, std::vector<tokenizer::Token>::const_iterator> conjunction(
-    const std::vector<tokenizer::Token>& tokens,
-    std::vector<tokenizer::Token>::const_iterator tokenPtr) {
+std::variant<std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>,
+             error::parser::unexpected_token>
+conjunction(const std::vector<tokenizer::Token>& tokens,
+            std::vector<tokenizer::Token>::const_iterator tokenPtr) {
   logger::Logger::dispatchLog(logger::debugLog{
       "Checking for conjunction at " +
       std::to_string(std::distance(tokens.begin(), tokenPtr))});
   const auto negationResult = negation(tokens, tokenPtr);
-  auto expr = negationResult.first;
-  tokenPtr = negationResult.second;
+  if (std::holds_alternative<error::parser::unexpected_token>(negationResult)) {
+    const auto negationError =
+        std::get<error::parser::unexpected_token>(negationResult);
+    return negationError;
+  }
+
+  const auto negationExpr =
+      std::get<std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>>(
+          negationResult);
+  auto expr = negationExpr.first;
+  tokenPtr = negationExpr.second;
 
   while (tokenPtr < tokens.end() && tokenPtr->type == util::symbols::CONJUNCT) {
     logger::Logger::dispatchLog(logger::debugLog{
         "Found conjunction at " +
         std::to_string(std::distance(tokens.begin(), tokenPtr))});
     const auto rightNegationResult = negation(tokens, tokenPtr + 1);
+    if (std::holds_alternative<error::parser::unexpected_token>(
+            rightNegationResult)) {
+      const auto rightNegationError =
+          std::get<error::parser::unexpected_token>(rightNegationResult);
+      return rightNegationResult;
+    }
+
+    const auto rightNegationExpr = std::get<
+        std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>>(
+        rightNegationResult);
     const auto operatorStruct =
-        new BinaryOperator{tokenPtr.base(), expr, rightNegationResult.first};
+        new BinaryOperator{tokenPtr.base(), expr, rightNegationExpr.first};
     expr = new Node{parser::BINARY, operatorStruct};
-    tokenPtr = rightNegationResult.second;
+    tokenPtr = rightNegationExpr.second;
   }
 
   return std::make_pair(expr, tokenPtr);
 }
 
-std::pair<Node*, std::vector<tokenizer::Token>::const_iterator> disjunction(
-    const std::vector<tokenizer::Token>& tokens,
-    std::vector<tokenizer::Token>::const_iterator tokenPtr) {
+std::variant<std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>,
+             error::parser::unexpected_token>
+disjunction(const std::vector<tokenizer::Token>& tokens,
+            std::vector<tokenizer::Token>::const_iterator tokenPtr) {
   logger::Logger::dispatchLog(logger::debugLog{
       "Checking for disjunction at " +
       std::to_string(std::distance(tokens.begin(), tokenPtr))});
   const auto conjunctionResult = conjunction(tokens, tokenPtr);
-  auto expr = conjunctionResult.first;
-  tokenPtr = conjunctionResult.second;
+  if (std::holds_alternative<error::parser::unexpected_token>(
+          conjunctionResult)) {
+    const auto conjunctionError =
+        std::get<error::parser::unexpected_token>(conjunctionResult);
+    return conjunctionError;
+  }
+
+  const auto conjunctionExpr =
+      std::get<std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>>(
+          conjunctionResult);
+  auto expr = conjunctionExpr.first;
+  tokenPtr = conjunctionExpr.second;
 
   while (tokenPtr < tokens.end() && tokenPtr->type == util::symbols::DISJUNCT) {
     logger::Logger::dispatchLog(logger::debugLog{
         "Found disjunction at " +
         std::to_string(std::distance(tokens.begin(), tokenPtr))});
     const auto rightConjunctionResult = conjunction(tokens, tokenPtr + 1);
+    if (std::holds_alternative<error::parser::unexpected_token>(
+            rightConjunctionResult)) {
+      const auto rightConjunctionError =
+          std::get<error::parser::unexpected_token>(rightConjunctionResult);
+      return rightConjunctionError;
+    }
+
+    const auto rightConjunctionExpr = std::get<
+        std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>>(
+        rightConjunctionResult);
     const auto operatorStruct =
-        new BinaryOperator{tokenPtr.base(), expr, rightConjunctionResult.first};
+        new BinaryOperator{tokenPtr.base(), expr, rightConjunctionExpr.first};
     expr = new Node{parser::BINARY, operatorStruct};
-    tokenPtr = rightConjunctionResult.second;
+    tokenPtr = rightConjunctionExpr.second;
   }
 
   return std::make_pair(expr, tokenPtr);
 }
 
-std::pair<Node*, std::vector<tokenizer::Token>::const_iterator> implication(
-    const std::vector<tokenizer::Token>& tokens,
-    std::vector<tokenizer::Token>::const_iterator tokenPtr) {
+std::variant<std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>,
+             error::parser::unexpected_token>
+implication(const std::vector<tokenizer::Token>& tokens,
+            std::vector<tokenizer::Token>::const_iterator tokenPtr) {
   logger::Logger::dispatchLog(logger::debugLog{
       "Checking for implication at " +
       std::to_string(std::distance(tokens.begin(), tokenPtr))});
   const auto disjunctionResult = disjunction(tokens, tokenPtr);
-  auto expr = disjunctionResult.first;
-  tokenPtr = disjunctionResult.second;
+  if (std::holds_alternative<error::parser::unexpected_token>(
+          disjunctionResult)) {
+    const auto disjunctionError =
+        std::get<error::parser::unexpected_token>(disjunctionResult);
+    return disjunctionError;
+  }
+
+  const auto disjunctionExpr =
+      std::get<std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>>(
+          disjunctionResult);
+  auto expr = disjunctionExpr.first;
+  tokenPtr = disjunctionExpr.second;
 
   while (tokenPtr < tokens.end() && tokenPtr->type == util::symbols::IMPL) {
     logger::Logger::dispatchLog(logger::debugLog{
@@ -128,30 +206,52 @@ std::pair<Node*, std::vector<tokenizer::Token>::const_iterator> implication(
         std::to_string(std::distance(tokens.begin(), tokenPtr))});
     tokenizer::Token op = *tokenPtr;
     const auto rightDisjunctionResult = disjunction(tokens, tokenPtr + 1);
+    if (std::holds_alternative<error::parser::unexpected_token>(
+            rightDisjunctionResult)) {
+      const auto rightDisjunctionError =
+          std::get<error::parser::unexpected_token>(rightDisjunctionResult);
+      return rightDisjunctionError;
+    }
+
+    const auto rightDisjunctionExpr = std::get<
+        std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>>(
+        rightDisjunctionResult);
     const auto operatorStruct =
-        new BinaryOperator{&op, expr, rightDisjunctionResult.first};
+        new BinaryOperator{&op, expr, rightDisjunctionExpr.first};
     expr = new Node{parser::BINARY, operatorStruct};
-    tokenPtr = rightDisjunctionResult.second;
+    tokenPtr = rightDisjunctionExpr.second;
   }
 
   return std::make_pair(expr, tokenPtr);
 }
 
-std::pair<Node*, std::vector<tokenizer::Token>::const_iterator> expression(
-    const std::vector<tokenizer::Token>& tokens,
-    std::vector<tokenizer::Token>::const_iterator tokenPtr) {
+std::variant<std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>,
+             error::parser::unexpected_token>
+expression(const std::vector<tokenizer::Token>& tokens,
+           std::vector<tokenizer::Token>::const_iterator tokenPtr) {
   logger::Logger::dispatchLog(logger::debugLog{
       "Checking for expression at " +
       std::to_string(std::distance(tokens.begin(), tokenPtr))});
   return implication(tokens, tokenPtr);
 }
 
-Node* parseAST(const std::vector<tokenizer::Token>& tokens) {
+std::variant<Node*, error::parser::unexpected_token> parseAST(
+    const std::vector<tokenizer::Token>& tokens) {
   logger::Logger::dispatchLog(logger::infoLog{"Starting to parse AST"});
   const auto tokenPtr = tokens.cbegin();
-  const auto exprResult = expression(tokens, tokenPtr);
 
-  if (exprResult.second != tokens.end()) {
+  const auto exprResult = expression(tokens, tokenPtr);
+  if (std::holds_alternative<error::parser::unexpected_token>(exprResult)) {
+    const auto exprError =
+        std::get<error::parser::unexpected_token>(exprResult);
+    return exprError;
+  }
+
+  const auto expr =
+      std::get<std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>>(
+          exprResult);
+
+  if (expr.second != tokens.end()) {
     logger::Logger::dispatchLog(logger::warnLog{warning::warning{
         "tokenPtr in parser not at end of vector after parsing",
         "unknown cause"}});
@@ -161,7 +261,7 @@ Node* parseAST(const std::vector<tokenizer::Token>& tokens) {
   }
 
   logger::Logger::dispatchLog(logger::infoLog{"AST successfully parsed"});
-  return exprResult.first;
+  return expr.first;
 }
 
 void deallocAST(const Node* root) {

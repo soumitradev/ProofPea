@@ -94,13 +94,13 @@ void renderASTRecursive(const Agraph_t *graph, const parser::Node *node,
   agedge((Agraph_t *)graph, (Agnode_t *)parent, renderedNode, 0, 1);
 }
 
-void printAST(const parser::Node *ast) {
+void printAST(const parser::AST *ast) {
   // TODO: Track errors in this function
   const auto ctx = graphvizInit();
 
   Agraph_t *astGraph = agopen((char *)"g", Agdirected, 0);
 
-  renderASTRecursive(astGraph, ast, nullptr);
+  renderASTRecursive(astGraph, ast->root, nullptr);
 
   graphvizClose(ctx, astGraph);
 }

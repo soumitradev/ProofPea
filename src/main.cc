@@ -49,7 +49,7 @@ int main() {
     const auto error =
         std::get<error::parser::unexpected_token>(syntaxTreeResult);
   }
-  const auto syntaxTree = std::get<const parser::Node*>(syntaxTreeResult);
+  const auto syntaxTree = std::get<parser::AST*>(syntaxTreeResult);
 
   debug::ast::printAST(syntaxTree);
 

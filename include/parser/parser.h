@@ -35,16 +35,20 @@ struct Node {
       node;
 };
 
+struct AST {
+  const struct Node *root;
+  std::unordered_map<std::string, const Node *> atoms;
+};
+
 std::variant<
     std::pair<const Node *, std::vector<tokenizer::Token *>::const_iterator>,
     error::parser::unexpected_token>
 expression(const std::vector<tokenizer::Token *> &tokens,
-           std::vector<tokenizer::Token *>::const_iterator tokenPtr);
-
-std::variant<const Node *, error::parser::unexpected_token> parseAST(
+           std::vector<tokenizer::Token *>::const_iterator tokenPtr, AST *ast);
+std::variant<AST *, error::parser::unexpected_token> parseAST(
     const std::vector<tokenizer::Token *> &tokens);
 
-void deallocAST(const Node *root);
+void deallocAST(AST *ast);
 
 }  // namespace parser
 

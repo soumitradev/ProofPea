@@ -2,13 +2,11 @@
 
 namespace parser {
 
-std::unordered_map<std::string, const Node*> atom_map;
-
 std::variant<
     std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>,
     error::parser::unexpected_token>
 primary(const std::vector<tokenizer::Token*>& tokens,
-        std::vector<tokenizer::Token*>::const_iterator tokenPtr) {
+        std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
   logger::Logger::dispatchLog(logger::debugLog{
       "Checking for primary token at " +
       std::to_string(std::distance(tokens.begin(), tokenPtr))});
@@ -18,8 +16,8 @@ primary(const std::vector<tokenizer::Token*>& tokens,
         "Detected atom " + (*tokenPtr)->lexeme + " at " +
         std::to_string(std::distance(tokens.begin(), tokenPtr))});
 
-    const auto atomNodePtr = atom_map.find((*tokenPtr)->lexeme);
-    if (atomNodePtr != atom_map.end()) {
+    const auto atomNodePtr = ast->atoms.find((*tokenPtr)->lexeme);
+    if (atomNodePtr != ast->atoms.end()) {
       logger::Logger::dispatchLog(logger::debugLog{
           "Found atom " + (*tokenPtr)->lexeme + " in hash-map"});
       return std::make_pair(atomNodePtr->second, tokenPtr + 1);
@@ -31,7 +29,7 @@ primary(const std::vector<tokenizer::Token*>& tokens,
 
     const auto atom = new Atom{*(tokenPtr.base())};
     const auto atomNode = new Node{parser::ATOM, atom};
-    atom_map[(*tokenPtr)->lexeme] = atomNode;
+    ast->atoms[(*tokenPtr)->lexeme] = atomNode;
 
     return std::make_pair(atomNode, tokenPtr + 1);
   }
@@ -41,7 +39,7 @@ primary(const std::vector<tokenizer::Token*>& tokens,
         "Detected grouping at " +
         std::to_string(std::distance(tokens.begin(), tokenPtr))});
 
-    const auto groupingResult = expression(tokens, tokenPtr + 1);
+    const auto groupingResult = expression(tokens, tokenPtr + 1, ast);
     if (std::holds_alternative<error::parser::unexpected_token>(
             groupingResult)) {
       const auto groupingError =
@@ -78,7 +76,7 @@ std::variant<
     std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>,
     error::parser::unexpected_token>
 negation(const std::vector<tokenizer::Token*>& tokens,
-         std::vector<tokenizer::Token*>::const_iterator tokenPtr) {
+         std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
   logger::Logger::dispatchLog(logger::debugLog{
       "Checking for negation at " +
       std::to_string(std::distance(tokens.begin(), tokenPtr))});
@@ -86,7 +84,7 @@ negation(const std::vector<tokenizer::Token*>& tokens,
     logger::Logger::dispatchLog(logger::debugLog{
         "Found negation at " +
         std::to_string(std::distance(tokens.begin(), tokenPtr))});
-    auto negationResult = negation(tokens, tokenPtr + 1);
+    auto negationResult = negation(tokens, tokenPtr + 1, ast);
     if (std::holds_alternative<error::parser::unexpected_token>(
             negationResult)) {
       const auto negationError =
@@ -103,18 +101,18 @@ negation(const std::vector<tokenizer::Token*>& tokens,
     return std::make_pair(expr, negationExpr.second);
   }
 
-  return primary(tokens, tokenPtr);
+  return primary(tokens, tokenPtr, ast);
 }
 
 std::variant<
     std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>,
     error::parser::unexpected_token>
 conjunction(const std::vector<tokenizer::Token*>& tokens,
-            std::vector<tokenizer::Token*>::const_iterator tokenPtr) {
+            std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
   logger::Logger::dispatchLog(logger::debugLog{
       "Checking for conjunction at " +
       std::to_string(std::distance(tokens.begin(), tokenPtr))});
-  const auto negationResult = negation(tokens, tokenPtr);
+  const auto negationResult = negation(tokens, tokenPtr, ast);
   if (std::holds_alternative<error::parser::unexpected_token>(negationResult)) {
     const auto negationError =
         std::get<error::parser::unexpected_token>(negationResult);
@@ -132,7 +130,7 @@ conjunction(const std::vector<tokenizer::Token*>& tokens,
     logger::Logger::dispatchLog(logger::debugLog{
         "Found conjunction at " +
         std::to_string(std::distance(tokens.begin(), tokenPtr))});
-    const auto rightNegationResult = negation(tokens, tokenPtr + 1);
+    const auto rightNegationResult = negation(tokens, tokenPtr + 1, ast);
     if (std::holds_alternative<error::parser::unexpected_token>(
             rightNegationResult)) {
       const auto rightNegationError =
@@ -156,11 +154,11 @@ std::variant<
     std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>,
     error::parser::unexpected_token>
 disjunction(const std::vector<tokenizer::Token*>& tokens,
-            std::vector<tokenizer::Token*>::const_iterator tokenPtr) {
+            std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
   logger::Logger::dispatchLog(logger::debugLog{
       "Checking for disjunction at " +
       std::to_string(std::distance(tokens.begin(), tokenPtr))});
-  const auto conjunctionResult = conjunction(tokens, tokenPtr);
+  const auto conjunctionResult = conjunction(tokens, tokenPtr, ast);
   if (std::holds_alternative<error::parser::unexpected_token>(
           conjunctionResult)) {
     const auto conjunctionError =
@@ -179,7 +177,7 @@ disjunction(const std::vector<tokenizer::Token*>& tokens,
     logger::Logger::dispatchLog(logger::debugLog{
         "Found disjunction at " +
         std::to_string(std::distance(tokens.begin(), tokenPtr))});
-    const auto rightConjunctionResult = conjunction(tokens, tokenPtr + 1);
+    const auto rightConjunctionResult = conjunction(tokens, tokenPtr + 1, ast);
     if (std::holds_alternative<error::parser::unexpected_token>(
             rightConjunctionResult)) {
       const auto rightConjunctionError =
@@ -203,11 +201,11 @@ std::variant<
     std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>,
     error::parser::unexpected_token>
 implication(const std::vector<tokenizer::Token*>& tokens,
-            std::vector<tokenizer::Token*>::const_iterator tokenPtr) {
+            std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
   logger::Logger::dispatchLog(logger::debugLog{
       "Checking for implication at " +
       std::to_string(std::distance(tokens.begin(), tokenPtr))});
-  const auto disjunctionResult = disjunction(tokens, tokenPtr);
+  const auto disjunctionResult = disjunction(tokens, tokenPtr, ast);
   if (std::holds_alternative<error::parser::unexpected_token>(
           disjunctionResult)) {
     const auto disjunctionError =
@@ -226,7 +224,7 @@ implication(const std::vector<tokenizer::Token*>& tokens,
         "Found implication at " +
         std::to_string(std::distance(tokens.begin(), tokenPtr))});
     tokenizer::Token* op = *tokenPtr;
-    const auto rightDisjunctionResult = disjunction(tokens, tokenPtr + 1);
+    const auto rightDisjunctionResult = disjunction(tokens, tokenPtr + 1, ast);
     if (std::holds_alternative<error::parser::unexpected_token>(
             rightDisjunctionResult)) {
       const auto rightDisjunctionError =
@@ -250,21 +248,21 @@ std::variant<
     std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>,
     error::parser::unexpected_token>
 expression(const std::vector<tokenizer::Token*>& tokens,
-           std::vector<tokenizer::Token*>::const_iterator tokenPtr) {
+           std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
   logger::Logger::dispatchLog(logger::debugLog{
       "Checking for expression at " +
       std::to_string(std::distance(tokens.begin(), tokenPtr))});
-  return implication(tokens, tokenPtr);
+  return implication(tokens, tokenPtr, ast);
 }
 
-std::variant<const Node*, error::parser::unexpected_token> parseAST(
+std::variant<AST*, error::parser::unexpected_token> parseAST(
     const std::vector<tokenizer::Token*>& tokens) {
+  struct AST* ast = new AST();
   logger::Logger::dispatchLog(logger::infoLog{"Starting to parse AST"});
   const auto tokenPtr = tokens.cbegin();
-  atom_map.clear();
+  ast->atoms.clear();
 
-  const auto exprResult = expression(tokens, tokenPtr);
-  atom_map.clear();
+  const auto exprResult = expression(tokens, tokenPtr, ast);
   if (std::holds_alternative<error::parser::unexpected_token>(exprResult)) {
     const auto exprError =
         std::get<error::parser::unexpected_token>(exprResult);
@@ -285,7 +283,8 @@ std::variant<const Node*, error::parser::unexpected_token> parseAST(
   }
 
   logger::Logger::dispatchLog(logger::infoLog{"AST successfully parsed"});
-  return expr.first;
+  ast->root = expr.first;
+  return ast;
 }
 
 void deallocNodeRecursive(const Node* root,
@@ -315,11 +314,13 @@ void deallocNodeRecursive(const Node* root,
   delete root;
 }
 
-void deallocAST(const Node* root) {
+void deallocAST(AST* ast) {
   std::unordered_set<const Node*> deletedAtoms;
   deletedAtoms.clear();
-  deallocNodeRecursive(root, deletedAtoms);
+  deallocNodeRecursive(ast->root, deletedAtoms);
   deletedAtoms.clear();
+  ast->atoms.clear();
+  delete ast;
 }
 
 }  // namespace parser

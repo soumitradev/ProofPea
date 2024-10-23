@@ -2,8 +2,8 @@
 
 A tool for performing some helpful operations on propositional logic formulae. The goal for this project is to tick the below boxes:
 
-- [ ] Check whether or not a propositional logic formula is well-formed or not
-- [ ] Ensure the parser can handle associativity rules to handle formulae that aren't guaranteed to be well-bracketed
+- [x] Check whether or not a propositional logic formula is well-formed or not
+- [x] Ensure the parser can handle associativity rules to handle formulae that aren't guaranteed to be well-bracketed
 - [ ] Construct a truth table for a given propositional logic formula
 - [ ] Convert propositional logic formulae to Negation Normal Form (NNF)
 - [ ] Convert propositional logic formulae to Conjunctive Normal Form (CNF), a.k.a. Product of Sums (PoS) form

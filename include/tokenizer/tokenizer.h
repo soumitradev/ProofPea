@@ -18,10 +18,10 @@ struct Token {
   size_t position;
 };
 
-std::variant<std::vector<Token>, error::tokenizer::invalid_symbol,
+std::variant<std::vector<Token*>, error::tokenizer::invalid_symbol,
              error::unknown::unknown_error>
-tokenize(std::string const formula);
-
+tokenize(std::string const formula, std::vector<tokenizer::Token*>& tokens);
+void deallocTokens(std::vector<tokenizer::Token*>& tokens);
 }  // namespace tokenizer
 
 #endif  // CNF_CONVERTOR_TOKENIZER

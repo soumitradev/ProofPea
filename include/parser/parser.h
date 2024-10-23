@@ -36,13 +36,13 @@ struct Node {
 };
 
 std::variant<
-    std::pair<const Node *, std::vector<tokenizer::Token>::const_iterator>,
+    std::pair<const Node *, std::vector<tokenizer::Token *>::const_iterator>,
     error::parser::unexpected_token>
-expression(const std::vector<tokenizer::Token> &tokens,
-           std::vector<tokenizer::Token>::const_iterator tokenPtr);
+expression(const std::vector<tokenizer::Token *> &tokens,
+           std::vector<tokenizer::Token *>::const_iterator tokenPtr);
 
 std::variant<const Node *, error::parser::unexpected_token> parseAST(
-    const std::vector<tokenizer::Token> &tokens);
+    const std::vector<tokenizer::Token *> &tokens);
 
 void deallocAST(const Node *root);
 

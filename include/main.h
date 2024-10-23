@@ -1,6 +1,7 @@
 #ifndef CNF_CONVERTOR_MAIN
 #define CNF_CONVERTOR_MAIN
 
+#include <debug/ast.h>
 #include <error/tokenizer.h>
 #include <error/unknown.h>
 #include <logger/logger.h>

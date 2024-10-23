@@ -51,6 +51,8 @@ int main() {
   }
   const auto syntaxTree = std::get<const parser::Node*>(syntaxTreeResult);
 
+  debug::ast::printAST(syntaxTree);
+
   parser::deallocAST(syntaxTree);
   tokenizer::deallocTokens(tokens);
   return 0;

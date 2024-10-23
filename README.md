@@ -18,6 +18,9 @@ A tool for performing some helpful operations on propositional logic formulae. T
 
 ## Usage
 
+> [!WARNING]  
+> You need to install the graphviz library `libgvc` to compile this from source, as the debug tool that renders ASTs uses this library. Please make sure that graphviz is installed and is included properly while compiling.
+
 I use `make` for compiling this thing:
 
 - `make all` - Compiles all the code, and spits out an executable in the `build` folder

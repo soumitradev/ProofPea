@@ -31,7 +31,7 @@ build/%.o: src/%.cc include/%.h
 
 
 $(EXECUTABLE): $(OBJ)
-	$(LD) $(OBJ) -g -o $@
+	$(LD) $(OBJ) -lgvc -lxdot -lpathplan -lcgraph -lcdt -g -o $@
 
 clean:
 	rm -rf $(EXECUTABLE_WIN) $(EXECUTABLE) logs/*

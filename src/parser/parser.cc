@@ -32,6 +32,27 @@ primary(const std::vector<tokenizer::Token*>& tokens,
     ast->atoms[(*tokenPtr)->lexeme] = atomNode;
 
     return std::make_pair(atomNode, tokenPtr + 1);
+  } else if ((*tokenPtr)->type == util::symbols::ABSOLUTE) {
+    logger::Logger::dispatchLog(logger::debugLog{
+        "Detected absolute " + (*tokenPtr)->lexeme + " at " +
+        std::to_string(std::distance(tokens.begin(), tokenPtr))});
+
+    const auto absolutePtr = ast->absolutes.find((*tokenPtr)->lexeme);
+    if (absolutePtr != ast->absolutes.end()) {
+      logger::Logger::dispatchLog(logger::debugLog{
+          "Found absolute " + (*tokenPtr)->lexeme + " in hash-map"});
+      return std::make_pair(absolutePtr->second, tokenPtr + 1);
+    }
+
+    logger::Logger::dispatchLog(
+        logger::debugLog{"Did not find absolute " + (*tokenPtr)->lexeme +
+                         " in hash-map, creating and inserting"});
+
+    const auto absolute = new Absolute{*(tokenPtr.base())};
+    const auto absoluteNode = new Node{parser::ABSOLUTE, absolute};
+    ast->absolutes[(*tokenPtr)->lexeme] = absoluteNode;
+
+    return std::make_pair(absoluteNode, tokenPtr + 1);
   }
 
   if ((*tokenPtr)->type == util::symbols::LBRACE) {

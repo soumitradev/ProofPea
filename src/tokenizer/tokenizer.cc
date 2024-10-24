@@ -42,6 +42,12 @@ getNextToken(std::string::const_iterator start, std::string::const_iterator ptr,
         case ')':
           type = util::symbols::RBRACE;
           break;
+        case '0':
+          type = util::symbols::ABSOLUTE;
+          break;
+        case '1':
+          type = util::symbols::ABSOLUTE;
+          break;
 
         default:
           std::stringstream ss;

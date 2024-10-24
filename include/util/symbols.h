@@ -9,7 +9,16 @@
 namespace util {
 namespace symbols {
 
-enum SymbolType { IMPL, DISJUNCT, CONJUNCT, NEG, LBRACE, RBRACE, ATOM };
+enum SymbolType {
+  IMPL,
+  DISJUNCT,
+  CONJUNCT,
+  NEG,
+  LBRACE,
+  RBRACE,
+  ATOM,
+  ABSOLUTE
+};
 
 extern std::string SymbolTypeArray[];
 

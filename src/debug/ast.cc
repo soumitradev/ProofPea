@@ -37,7 +37,7 @@ Agnode_t *renderNode(Agraph_t *graph, void *nodePtr, const std::string lexeme,
                      parser::NodeType type) {
   // TODO: Track errors in this function
   char *name = nullptr;
-  if (type != parser::ATOM) {
+  if (type != parser::ATOM && type != parser::ABSOLUTE) {
     // Use the pointer to the operator to make a unique name for the operator
     std::ostringstream pointerStream;
     pointerStream << nodePtr;
@@ -61,6 +61,10 @@ Agnode_t *renderNode(Agraph_t *graph, void *nodePtr, const std::string lexeme,
   // Render atoms in red
   if (type == parser::ATOM) {
     agsafeset(renderedNode, (char *)"color", (char *)"red", (char *)"");
+  }
+  // Render absolutes in blue
+  if (type == parser::ABSOLUTE) {
+    agsafeset(renderedNode, (char *)"color", (char *)"blue", (char *)"");
   }
 
   return renderedNode;
@@ -88,6 +92,10 @@ void renderASTRecursive(const Agraph_t *graph, const parser::Node *node,
     const auto atomNode = std::get<const parser::Atom *>(node->node);
     renderedNode = renderNode((Agraph_t *)graph, (void *)atomNode,
                               atomNode->token->lexeme, node->type);
+  } else if (node->type == parser::ABSOLUTE) {
+    const auto absoluteNode = std::get<const parser::Absolute *>(node->node);
+    renderedNode = renderNode((Agraph_t *)graph, (void *)absoluteNode,
+                              absoluteNode->token->lexeme, node->type);
   }
 
   if (parent == nullptr) return;

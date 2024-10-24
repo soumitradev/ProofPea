@@ -11,7 +11,11 @@
 
 namespace parser {
 
-enum NodeType { UNARY, BINARY, ATOM };
+enum NodeType { UNARY, BINARY, ATOM, ABSOLUTE };
+
+struct Absolute {
+  const tokenizer::Token *token;
+};
 
 struct Atom {
   const tokenizer::Token *token;
@@ -31,13 +35,14 @@ struct BinaryOperator {
 struct Node {
   NodeType type;
   const std::variant<const UnaryOperator *, const BinaryOperator *,
-                     const Atom *>
+                     const Atom *, const Absolute *>
       node;
 };
 
 struct AST {
   const struct Node *root;
   std::unordered_map<std::string, const Node *> atoms;
+  std::unordered_map<std::string, const Node *> absolutes;
 };
 
 std::variant<

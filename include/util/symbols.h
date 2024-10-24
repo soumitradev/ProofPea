@@ -17,7 +17,8 @@ enum SymbolType {
   LBRACE,
   RBRACE,
   ATOM,
-  ABSOLUTE
+  ABSOLUTETRUE,
+  ABSOLUTEFALSE
 };
 
 extern std::string SymbolTypeArray[];

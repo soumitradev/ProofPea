@@ -36,22 +36,38 @@ int main() {
     return 125;
   }
 
+  std::ostringstream lexemes;
   for (size_t i = 0; i < tokens.size(); i++) {
-    std::cout << tokens[i]->lexeme << "\t";
+    lexemes << tokens[i]->lexeme << "\t";
   }
+  logger::Logger::dispatchLog(
+      logger::infoLog{log : "Tokens detected: " + lexemes.str()});
 
-  std::cout << std::endl;
-  logger::Logger::dispatchLog(logger::
-                              infoLog{log : "Finished outputting tokens"});
   const auto syntaxTreeResult = parser::parseAST(tokens);
   if (std::holds_alternative<error::parser::unexpected_token>(
           syntaxTreeResult)) {
     const auto error =
         std::get<error::parser::unexpected_token>(syntaxTreeResult);
+    logger::Logger::dispatchLog(logger::errorLog{error : error});
+    return 1;
   }
   const auto syntaxTree = std::get<parser::AST*>(syntaxTreeResult);
 
   debug::ast::printAST(syntaxTree);
+
+  const auto truthTableResult =
+      truth_table::tabulator::printTruthTable(syntaxTree);
+  if (std::holds_alternative<error::eval::unexpected_node>(truthTableResult)) {
+    const auto error = std::get<error::eval::unexpected_node>(truthTableResult);
+    logger::Logger::dispatchLog(logger::errorLog{error : error});
+    return 1;
+  }
+  if (std::holds_alternative<error::eval::mismatched_atoms>(truthTableResult)) {
+    const auto error =
+        std::get<error::eval::mismatched_atoms>(truthTableResult);
+    logger::Logger::dispatchLog(logger::errorLog{error : error});
+    return 1;
+  }
 
   parser::deallocAST(syntaxTree);
   tokenizer::deallocTokens(tokens);

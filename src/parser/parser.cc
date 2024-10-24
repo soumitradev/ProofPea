@@ -32,7 +32,8 @@ primary(const std::vector<tokenizer::Token*>& tokens,
     ast->atoms[(*tokenPtr)->lexeme] = atomNode;
 
     return std::make_pair(atomNode, tokenPtr + 1);
-  } else if ((*tokenPtr)->type == util::symbols::ABSOLUTE) {
+  } else if ((*tokenPtr)->type == util::symbols::ABSOLUTETRUE ||
+             (*tokenPtr)->type == util::symbols::ABSOLUTEFALSE) {
     logger::Logger::dispatchLog(logger::debugLog{
         "Detected absolute " + (*tokenPtr)->lexeme + " at " +
         std::to_string(std::distance(tokens.begin(), tokenPtr))});

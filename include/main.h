@@ -5,6 +5,7 @@
 #include <error/tokenizer.h>
 #include <error/unknown.h>
 #include <logger/logger.h>
+#include <truth_table/tabulate.h>
 #include <parser/parser.h>
 #include <tokenizer/tokenizer.h>
 

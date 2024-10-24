@@ -43,10 +43,10 @@ getNextToken(std::string::const_iterator start, std::string::const_iterator ptr,
           type = util::symbols::RBRACE;
           break;
         case '0':
-          type = util::symbols::ABSOLUTE;
+          type = util::symbols::ABSOLUTEFALSE;
           break;
         case '1':
-          type = util::symbols::ABSOLUTE;
+          type = util::symbols::ABSOLUTETRUE;
           break;
 
         default:

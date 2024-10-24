@@ -32,6 +32,8 @@ I use `make` for compiling this thing:
 
 ## Syntax
 
+- `0` is constant FALSE
+- `1` is constant TRUE
 - `~` is the NOT operator
 - `+` is the OR operator
 - `^` is the AND operator
@@ -39,7 +41,7 @@ I use `make` for compiling this thing:
 - Any single letter, capital or lowercase is considered an atom
 - Any single letter, capital or lowercase, followed by an arbitrary number of numbers is also considered an atom
 
-e.g. So, `p`, `P` `q`, `Q`, `p1`, `p23`, `Q7` are all considered unique atoms.
+e.g. So, `p`, `P` `q`, `Q`, `p1`, `p23`, `Q7` are all considered unique atoms. `pqr`, `pqr2343` are not valid atoms.
 
 You can use brackets to separate parts of your formulae.
 

@@ -219,26 +219,25 @@ implication(const std::vector<tokenizer::Token*>& tokens,
   auto expr = disjunctionExpr.first;
   tokenPtr = disjunctionExpr.second;
 
-  while (tokenPtr < tokens.end() && (*tokenPtr)->type == util::symbols::IMPL) {
+  if (tokenPtr < tokens.end() && (*tokenPtr)->type == util::symbols::IMPL) {
     logger::Logger::dispatchLog(logger::debugLog{
         "Found implication at " +
         std::to_string(std::distance(tokens.begin(), tokenPtr))});
     tokenizer::Token* op = *tokenPtr;
-    const auto rightDisjunctionResult = disjunction(tokens, tokenPtr + 1, ast);
+    const auto implicationResult = implication(tokens, tokenPtr + 1, ast);
     if (std::holds_alternative<error::parser::unexpected_token>(
-            rightDisjunctionResult)) {
-      const auto rightDisjunctionError =
-          std::get<error::parser::unexpected_token>(rightDisjunctionResult);
-      return rightDisjunctionError;
+            implicationResult)) {
+      const auto implicationError =
+          std::get<error::parser::unexpected_token>(implicationResult);
+      return implicationError;
     }
-
-    const auto rightDisjunctionExpr = std::get<
+    const auto implicationExpr = std::get<
         std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>>(
-        rightDisjunctionResult);
+        implicationResult);
     const auto operatorStruct =
-        new BinaryOperator{op, expr, rightDisjunctionExpr.first};
+        new BinaryOperator{op, disjunctionExpr.first, implicationExpr.first};
     expr = new Node{parser::BINARY, operatorStruct};
-    tokenPtr = rightDisjunctionExpr.second;
+    tokenPtr = implicationExpr.second;
   }
 
   return std::make_pair(expr, tokenPtr);

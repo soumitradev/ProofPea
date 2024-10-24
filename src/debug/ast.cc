@@ -5,17 +5,23 @@ namespace ast {
 
 GVC_t *graphvizInit() {
   // TODO: Track errors in this function
+  logger::Logger::dispatchLog(logger::debugLog{"Creating graphviz context"});
   GVC_t *ctx = gvContext();
   const char *astFilename = "ast.svg";
 
   // Create the AST output file
+  logger::Logger::dispatchLog(logger::debugLog{"Creating AST svg output file"});
   std::ofstream astFile(astFilename);
   astFile.close();
 
   // Pass args to graphviz
+  logger::Logger::dispatchLog(
+      logger::debugLog{"Configuring the graphviz context"});
   const char *args[] = {"dot", "-Tsvg", "-o", (char *)astFilename};
   gvParseArgs(ctx, 4, (char **)args);
 
+  logger::Logger::dispatchLog(
+      logger::infoLog{"graphviz has been initialized successfully"});
   return ctx;
 }
 
@@ -23,34 +29,45 @@ void graphvizClose(GVC_t *ctx, Agraph_t *graph) {
   // Compute, render and write the graph according to args passed to
   // graphvizContext
   // TODO: Track errors in this function
+  logger::Logger::dispatchLog(
+      logger::debugLog{"Rendering graphviz layouts and content"});
   gvLayoutJobs(ctx, graph);
   gvRenderJobs(ctx, graph);
 
   // Deallocate data
+  logger::Logger::dispatchLog(logger::debugLog{"Deallocating graphviz data"});
   gvFreeLayout(ctx, graph);
   agclose(graph);
 
   gvFreeContext(ctx);
+  logger::Logger::dispatchLog(
+      logger::infoLog{"graphviz has been uninitialized successfully"});
 }
 
 Agnode_t *renderNode(Agraph_t *graph, void *nodePtr, const std::string lexeme,
                      parser::NodeType type) {
   // TODO: Track errors in this function
   char *name = nullptr;
-  if (type != parser::ATOM && type != parser::ABSOLUTE) {
+  if (type == parser::ATOM || type == parser::ABSOLUTE) {
+    // Use the lexeme of the atom itself, since atoms with the same lexeme are
+    // the same
+    logger::Logger::dispatchLog(
+        logger::debugLog{"Generating name for atom/absolute node"});
+    name = (char *)lexeme.data();
+  } else {
     // Use the pointer to the operator to make a unique name for the operator
+    logger::Logger::dispatchLog(
+        logger::debugLog{"Generating name for operator node"});
     std::ostringstream pointerStream;
     pointerStream << nodePtr;
     name = pointerStream.str().data();
-  } else {
-    // Use the lexeme of the atom itself, since atoms with the same lexeme are
-    // the same
-    name = (char *)lexeme.data();
   }
 
   Agnode_t *renderedNode = agnode(graph, name, 1);
 
   // Set the display label to the lexeme of the node
+  logger::Logger::dispatchLog(
+      logger::debugLog{"Setting display label of node \"" + lexeme + "\""});
   if (lexeme != "->") {
     agsafeset(renderedNode, (char *)"label", (char *)lexeme.data(), (char *)"");
   } else {
@@ -58,6 +75,8 @@ Agnode_t *renderNode(Agraph_t *graph, void *nodePtr, const std::string lexeme,
     agsafeset(renderedNode, (char *)"label", (char *)"⇒", (char *)"");
   }
 
+  logger::Logger::dispatchLog(
+      logger::debugLog{"Setting display color of node \"" + lexeme + "\""});
   // Render atoms in red
   if (type == parser::ATOM) {
     agsafeset(renderedNode, (char *)"color", (char *)"red", (char *)"");
@@ -78,27 +97,46 @@ void renderASTRecursive(const Agraph_t *graph, const parser::Node *node,
     const auto unaryOperatorNode =
         std::get<const parser::UnaryOperator *>(node->node);
 
+    logger::Logger::dispatchLog(logger::debugLog{
+        "Rendering unary operator \"" + unaryOperatorNode->op->lexeme +
+        "\" at position " + std::to_string(unaryOperatorNode->op->position)});
     renderedNode = renderNode((Agraph_t *)graph, (void *)unaryOperatorNode,
                               unaryOperatorNode->op->lexeme, node->type);
     renderASTRecursive(graph, unaryOperatorNode->child, renderedNode);
   } else if (node->type == parser::BINARY) {
     const auto binaryOperatorNode =
         std::get<const parser::BinaryOperator *>(node->node);
+
+    logger::Logger::dispatchLog(logger::debugLog{
+        "Rendering binary operator \"" + binaryOperatorNode->op->lexeme +
+        "\" at position " + std::to_string(binaryOperatorNode->op->position)});
+
     renderedNode = renderNode((Agraph_t *)graph, (void *)binaryOperatorNode,
                               binaryOperatorNode->op->lexeme, node->type);
     renderASTRecursive(graph, binaryOperatorNode->left, renderedNode);
     renderASTRecursive(graph, binaryOperatorNode->right, renderedNode);
   } else if (node->type == parser::ATOM) {
     const auto atomNode = std::get<const parser::Atom *>(node->node);
+    logger::Logger::dispatchLog(logger::debugLog{
+        "Rendering atom \"" + atomNode->token->lexeme + "\" at position " +
+        std::to_string(atomNode->token->position)});
     renderedNode = renderNode((Agraph_t *)graph, (void *)atomNode,
                               atomNode->token->lexeme, node->type);
   } else if (node->type == parser::ABSOLUTE) {
     const auto absoluteNode = std::get<const parser::Absolute *>(node->node);
+    logger::Logger::dispatchLog(logger::debugLog{
+        "Rendering absolute \"" + absoluteNode->token->lexeme +
+        "\" at position " + std::to_string(absoluteNode->token->position)});
     renderedNode = renderNode((Agraph_t *)graph, (void *)absoluteNode,
                               absoluteNode->token->lexeme, node->type);
   }
 
   if (parent == nullptr) return;
+  std::string parentLabel = agget((void *)parent, (char *)"label");
+  std::string currentLabel = agget((void *)renderedNode, (char *)"label");
+  logger::Logger::dispatchLog(logger::debugLog{"Rendering edge from parent \"" +
+                                               parentLabel + "\" to \"" +
+                                               currentLabel + "\""});
   agedge((Agraph_t *)graph, (Agnode_t *)parent, renderedNode, 0, 1);
 }
 
@@ -106,8 +144,8 @@ void printAST(const parser::AST *ast) {
   // TODO: Track errors in this function
   const auto ctx = graphvizInit();
 
+  logger::Logger::dispatchLog(logger::infoLog{"Starting the AST render"});
   Agraph_t *astGraph = agopen((char *)"g", Agdirected, 0);
-
   renderASTRecursive(astGraph, ast->root, nullptr);
 
   graphvizClose(ctx, astGraph);

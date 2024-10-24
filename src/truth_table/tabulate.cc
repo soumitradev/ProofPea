@@ -9,10 +9,20 @@ generateStates(std::map<std::vector<bool>, bool>& table, parser::AST* ast,
                std::vector<const parser::Node*>::const_iterator atomPtr,
                std::unordered_map<const parser::Node*, bool>& state) {
   if (atomPtr == atomNodes.end()) {
+    logger::Logger::dispatchLog(logger::debugLog{"All atoms assigned values"});
     std::vector<bool> atomState(atomNodes.size());
+    std::ostringstream stateString;
+    stateString << "[";
     for (int i = 0; i < atomState.size(); i++) {
       atomState[i] = state[atomNodes[i]];
+      const auto node = std::get<const parser::Atom*>(atomNodes[i]->node);
+      stateString << node->token->lexeme << ": " << (atomState[i] ? "1" : "0")
+                  << ((i == atomState.size() - 1) ? "" : ", ");
     }
+    stateString << "]";
+
+    logger::Logger::dispatchLog(logger::debugLog{
+        "Evaluating expression for state " + stateString.str()});
     const auto evalResult = eval::evaluateState(ast, state);
     if (std::holds_alternative<error::eval::unexpected_node>(evalResult)) {
       return std::get<error::eval::unexpected_node>(evalResult);
@@ -21,10 +31,18 @@ generateStates(std::map<std::vector<bool>, bool>& table, parser::AST* ast,
       return std::get<error::eval::mismatched_atoms>(evalResult);
     }
     const auto evalValue = std::get<bool>(evalResult);
+
+    logger::Logger::dispatchLog(logger::debugLog{
+        "State evaluated to: " +
+        (evalValue ? std::string("true") : std::string("false"))});
     table[atomState] = evalValue;
     return true;
   }
 
+  const auto node = std::get<const parser::Atom*>((*atomPtr)->node);
+
+  logger::Logger::dispatchLog(logger::debugLog{
+      "Setting atom \"" + node->token->lexeme + "\" to false"});
   state[*atomPtr] = false;
   const auto falseStateResult =
       generateStates(table, ast, atomNodes, atomPtr + 1, state);
@@ -35,6 +53,8 @@ generateStates(std::map<std::vector<bool>, bool>& table, parser::AST* ast,
     return std::get<error::eval::mismatched_atoms>(falseStateResult);
   }
 
+  logger::Logger::dispatchLog(
+      logger::debugLog{"Setting atom \"" + node->token->lexeme + "\" to true"});
   state[*atomPtr] = true;
   const auto trueStateResult =
       generateStates(table, ast, atomNodes, atomPtr + 1, state);
@@ -52,12 +72,16 @@ std::variant<std::vector<std::string>, error::eval::unexpected_node,
              error::eval::mismatched_atoms>
 constructTruthTable(std::map<std::vector<bool>, bool>& table,
                     parser::AST* ast) {
+  logger::Logger::dispatchLog(
+      logger::debugLog{"Constructing list of sorted atoms"});
   std::vector<std::pair<std::string, const parser::Node*>> atoms;
   for (auto& x : ast->atoms) {
     atoms.push_back(x);
   }
   std::sort(atoms.begin(), atoms.end());
 
+  logger::Logger::dispatchLog(
+      logger::debugLog{"Constructing initial states for atoms"});
   std::vector<std::string> atomStrings(atoms.size());
   std::vector<const parser::Node*> atomNodes(atoms.size());
   std::unordered_map<const parser::Node*, bool> state;
@@ -67,6 +91,8 @@ constructTruthTable(std::map<std::vector<bool>, bool>& table,
     state[atoms[i].second] = false;
   }
 
+  logger::Logger::dispatchLog(
+      logger::debugLog{"Generating all possible atom states"});
   const auto status =
       generateStates(table, ast, atomNodes, atomNodes.begin(), state);
   if (std::holds_alternative<error::eval::unexpected_node>(status)) {
@@ -81,6 +107,7 @@ constructTruthTable(std::map<std::vector<bool>, bool>& table,
 std::variant<bool, error::eval::unexpected_node, error::eval::mismatched_atoms>
 printTruthTable(parser::AST* ast) {
   std::map<std::vector<bool>, bool> table;
+  logger::Logger::dispatchLog(logger::infoLog{"Constructing truth table"});
   const auto truthTableResult =
       truth_table::tabulator::constructTruthTable(table, ast);
   if (std::holds_alternative<error::eval::unexpected_node>(truthTableResult)) {
@@ -90,6 +117,7 @@ printTruthTable(parser::AST* ast) {
     return std::get<error::eval::mismatched_atoms>(truthTableResult);
   }
   const auto atomList = std::get<std::vector<std::string>>(truthTableResult);
+  logger::Logger::dispatchLog(logger::infoLog{"Printing truth table"});
   for (auto& atomString : atomList) {
     std::cout << atomString << "\t";
   }

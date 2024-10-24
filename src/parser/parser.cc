@@ -313,6 +313,9 @@ void deallocNodeRecursive(const Node* root,
   if (root->type == parser::ATOM) {
     auto ptr = std::get<const parser::Atom*>(root->node);
     delete ptr;
+  } else if (root->type == parser::ABSOLUTE) {
+    auto ptr = std::get<const parser::Absolute*>(root->node);
+    delete ptr;
   } else if (root->type == parser::BINARY) {
     auto ptr = std::get<const parser::BinaryOperator*>(root->node);
     if (deletedAtoms.find(ptr->left) == deletedAtoms.end()) {
@@ -341,6 +344,7 @@ void deallocAST(AST* ast) {
   deallocNodeRecursive(ast->root, deletedAtoms);
   deletedAtoms.clear();
   ast->atoms.clear();
+  ast->absolutes.clear();
   delete ast;
 }
 

@@ -14,7 +14,8 @@ enum SymbolType { IMPL, DISJUNCT, CONJUNCT, NEG, LBRACE, RBRACE, ATOM };
 extern std::string SymbolTypeArray[];
 
 bool checkFirstCharacterOfSymbol(char target);
-bool checkLongerSymbol(char target);
+bool checkLongerSymbol(std::string::const_iterator target,
+                       std::string::const_iterator end);
 bool checkAtom(char target);
 bool checkWhitespace(char target);
 std::string getLongerSymbol(std::string::const_iterator ptr);

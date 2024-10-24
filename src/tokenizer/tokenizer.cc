@@ -13,7 +13,7 @@ getNextToken(std::string::const_iterator start, std::string::const_iterator ptr,
   const size_t position = std::distance(start, ptr);
 
   if (util::symbols::checkFirstCharacterOfSymbol(*ptr)) {
-    if (util::symbols::checkLongerSymbol(*ptr)) {
+    if (util::symbols::checkLongerSymbol(ptr, end)) {
       logger::Logger::dispatchLog(logger::debugLog{
         log : "Classified incoming token as long symbol at position " +
         std::to_string(std::distance(start, ptr))

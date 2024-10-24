@@ -27,7 +27,11 @@ bool checkFirstCharacterOfSymbol(char target) {
   return found;
 }
 
-bool checkLongerSymbol(char target) { return target == IMPL_STR[0]; }
+bool checkLongerSymbol(std::string::const_iterator target,
+                       std::string::const_iterator end) {
+  return *target == IMPL_STR[0] && (target + 1) < end &&
+         *(target + 1) == IMPL_STR[1];
+}
 
 bool checkAtom(char target) {
   return ((target >= 65) && (target <= 90)) ||

@@ -48,20 +48,12 @@ Agnode_t *renderNode(Agraph_t *graph, void *nodePtr, const std::string lexeme,
                      parser::parser::NodeType type) {
   // TODO: Track errors in this function
   char *name = nullptr;
-  if (type == parser::parser::ATOM || type == parser::parser::ABSOLUTE) {
-    // Use the lexeme of the atom itself, since atoms with the same lexeme are
-    // the same
-    logger::Logger::dispatchLog(
-        logger::debugLog{"Generating name for atom/absolute node"});
-    name = (char *)lexeme.data();
-  } else {
-    // Use the pointer to the operator to make a unique name for the operator
-    logger::Logger::dispatchLog(
-        logger::debugLog{"Generating name for operator node"});
-    std::ostringstream pointerStream;
-    pointerStream << nodePtr;
-    name = pointerStream.str().data();
-  }
+
+  // Use the pointer to the operator to make a unique name for the operator
+  logger::Logger::dispatchLog(logger::debugLog{"Generating name for node"});
+  std::ostringstream pointerStream;
+  pointerStream << nodePtr;
+  name = pointerStream.str().data();
 
   Agnode_t *renderedNode = agnode(graph, name, 1);
 

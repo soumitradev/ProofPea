@@ -90,7 +90,7 @@ Agnode_t *renderNode(Agraph_t *graph, void *nodePtr, const std::string lexeme,
 }
 
 void renderASTRecursive(const Agraph_t *graph, const parser::Node *node,
-                        const Agnode_t *parent) {
+                        const Agnode_t *parent, bool isLeftChild) {
   // TODO: Track errors in this function
   Agnode_t *renderedNode = nullptr;
   if (node->type == parser::UNARY) {
@@ -102,7 +102,7 @@ void renderASTRecursive(const Agraph_t *graph, const parser::Node *node,
         "\" at position " + std::to_string(unaryOperatorNode->op->position)});
     renderedNode = renderNode((Agraph_t *)graph, (void *)unaryOperatorNode,
                               unaryOperatorNode->op->lexeme, node->type);
-    renderASTRecursive(graph, unaryOperatorNode->child, renderedNode);
+    renderASTRecursive(graph, unaryOperatorNode->child, renderedNode, false);
   } else if (node->type == parser::BINARY) {
     const auto binaryOperatorNode =
         std::get<const parser::BinaryOperator *>(node->node);
@@ -113,8 +113,8 @@ void renderASTRecursive(const Agraph_t *graph, const parser::Node *node,
 
     renderedNode = renderNode((Agraph_t *)graph, (void *)binaryOperatorNode,
                               binaryOperatorNode->op->lexeme, node->type);
-    renderASTRecursive(graph, binaryOperatorNode->left, renderedNode);
-    renderASTRecursive(graph, binaryOperatorNode->right, renderedNode);
+    renderASTRecursive(graph, binaryOperatorNode->left, renderedNode, true);
+    renderASTRecursive(graph, binaryOperatorNode->right, renderedNode, false);
   } else if (node->type == parser::ATOM) {
     const auto atomNode = std::get<const parser::Atom *>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{
@@ -137,7 +137,11 @@ void renderASTRecursive(const Agraph_t *graph, const parser::Node *node,
   logger::Logger::dispatchLog(logger::debugLog{"Rendering edge from parent \"" +
                                                parentLabel + "\" to \"" +
                                                currentLabel + "\""});
-  agedge((Agraph_t *)graph, (Agnode_t *)parent, renderedNode, 0, 1);
+  auto edge = agedge((Agraph_t *)graph, (Agnode_t *)parent, renderedNode, 0, 1);
+  if (parentLabel == "⇒") {
+    agsafeset((void *)edge, (char *)"label", (char *)(isLeftChild ? "L" : "R"),
+              (char *)"");
+  }
 }
 
 void printAST(const parser::AST *ast) {
@@ -146,7 +150,7 @@ void printAST(const parser::AST *ast) {
 
   logger::Logger::dispatchLog(logger::infoLog{"Starting the AST render"});
   Agraph_t *astGraph = agopen((char *)"g", Agdirected, 0);
-  renderASTRecursive(astGraph, ast->root, nullptr);
+  renderASTRecursive(astGraph, ast->root, nullptr, false);
 
   graphvizClose(ctx, astGraph);
 }

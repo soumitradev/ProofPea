@@ -12,7 +12,7 @@ namespace truth_table {
 namespace tabulator {
 
 std::variant<bool, error::eval::unexpected_node, error::eval::mismatched_atoms>
-printTruthTable(parser::AST* ast);
+printTruthTable(parser::parser::AST* ast);
 }
 }  // namespace truth_table
 

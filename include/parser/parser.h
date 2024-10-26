@@ -1,14 +1,15 @@
-#ifndef CNF_CONVERTOR_PARSE_TREE
-#define CNF_CONVERTOR_PARSE_TREE
+#ifndef CNF_CONVERTOR_PARSER
+#define CNF_CONVERTOR_PARSER
 
 #include <error/parser.h>
-#include <tokenizer/tokenizer.h>
+#include <parser/tokenizer.h>
 
 #include <iostream>
 #include <unordered_map>
 #include <unordered_set>
 #include <variant>
 
+namespace parser {
 namespace parser {
 
 enum NodeType { UNARY, BINARY, ATOM, ABSOLUTE };
@@ -41,20 +42,23 @@ struct Node {
 
 struct AST {
   const struct Node *root;
+  std::vector<tokenizer::Token> tokens;
   std::unordered_map<std::string, const Node *> atoms;
   std::unordered_map<std::string, const Node *> absolutes;
+  AST(const std::vector<tokenizer::Token> &tokens) {
+    this->tokens = std::vector<tokenizer::Token>(tokens);
+  }
 };
 
 std::variant<
-    std::pair<const Node *, std::vector<tokenizer::Token *>::const_iterator>,
+    std::pair<const Node *, std::vector<tokenizer::Token>::const_iterator>,
     error::parser::unexpected_token>
-expression(const std::vector<tokenizer::Token *> &tokens,
-           std::vector<tokenizer::Token *>::const_iterator tokenPtr, AST *ast);
+expression(std::vector<tokenizer::Token>::const_iterator tokenPtr, AST *ast);
 std::variant<AST *, error::parser::unexpected_token> parseAST(
-    const std::vector<tokenizer::Token *> &tokens);
+    const std::vector<tokenizer::Token> &tokens);
 
 void deallocAST(AST *ast);
-
+}  // namespace parser
 }  // namespace parser
 
-#endif  // CNF_CONVERTOR_PARSE_TREE
+#endif  // CNF_CONVERTOR_PARSER

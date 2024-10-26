@@ -10,7 +10,7 @@
 
 namespace debug {
 namespace ast {
-void printAST(const parser::AST *ast);
+void printAST(const parser::parser::AST *ast);
 }  // namespace ast
 }  // namespace debug
 

@@ -2,12 +2,11 @@
 #define CNF_CONVERTOR_MAIN
 
 #include <debug/ast.h>
-#include <error/tokenizer.h>
 #include <error/unknown.h>
 #include <logger/logger.h>
-#include <truth_table/tabulate.h>
 #include <parser/parser.h>
-#include <tokenizer/tokenizer.h>
+#include <parser/tokenizer.h>
+#include <truth_table/tabulate.h>
 
 #include <iostream>
 #include <variant>

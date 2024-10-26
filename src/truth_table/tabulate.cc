@@ -4,10 +4,11 @@ namespace truth_table {
 namespace tabulator {
 
 std::variant<bool, error::eval::unexpected_node, error::eval::mismatched_atoms>
-generateStates(std::map<std::vector<bool>, bool>& table, parser::AST* ast,
-               std::vector<const parser::Node*>& atomNodes,
-               std::vector<const parser::Node*>::const_iterator atomPtr,
-               std::unordered_map<const parser::Node*, bool>& state) {
+generateStates(std::map<std::vector<bool>, bool>& table,
+               parser::parser::AST* ast,
+               std::vector<const parser::parser::Node*>& atomNodes,
+               std::vector<const parser::parser::Node*>::const_iterator atomPtr,
+               std::unordered_map<const parser::parser::Node*, bool>& state) {
   if (atomPtr == atomNodes.end()) {
     logger::Logger::dispatchLog(logger::debugLog{"All atoms assigned values"});
     std::vector<bool> atomState(atomNodes.size());
@@ -15,7 +16,8 @@ generateStates(std::map<std::vector<bool>, bool>& table, parser::AST* ast,
     stateString << "[";
     for (int i = 0; i < atomState.size(); i++) {
       atomState[i] = state[atomNodes[i]];
-      const auto node = std::get<const parser::Atom*>(atomNodes[i]->node);
+      const auto node =
+          std::get<const parser::parser::Atom*>(atomNodes[i]->node);
       stateString << node->token->lexeme << ": " << (atomState[i] ? "1" : "0")
                   << ((i == atomState.size() - 1) ? "" : ", ");
     }
@@ -39,7 +41,7 @@ generateStates(std::map<std::vector<bool>, bool>& table, parser::AST* ast,
     return true;
   }
 
-  const auto node = std::get<const parser::Atom*>((*atomPtr)->node);
+  const auto node = std::get<const parser::parser::Atom*>((*atomPtr)->node);
 
   logger::Logger::dispatchLog(logger::debugLog{
       "Setting atom \"" + node->token->lexeme + "\" to false"});
@@ -71,10 +73,10 @@ generateStates(std::map<std::vector<bool>, bool>& table, parser::AST* ast,
 std::variant<std::vector<std::string>, error::eval::unexpected_node,
              error::eval::mismatched_atoms>
 constructTruthTable(std::map<std::vector<bool>, bool>& table,
-                    parser::AST* ast) {
+                    parser::parser::AST* ast) {
   logger::Logger::dispatchLog(
       logger::debugLog{"Constructing list of sorted atoms"});
-  std::vector<std::pair<std::string, const parser::Node*>> atoms;
+  std::vector<std::pair<std::string, const parser::parser::Node*>> atoms;
   for (auto& x : ast->atoms) {
     atoms.push_back(x);
   }
@@ -83,8 +85,8 @@ constructTruthTable(std::map<std::vector<bool>, bool>& table,
   logger::Logger::dispatchLog(
       logger::debugLog{"Constructing initial states for atoms"});
   std::vector<std::string> atomStrings(atoms.size());
-  std::vector<const parser::Node*> atomNodes(atoms.size());
-  std::unordered_map<const parser::Node*, bool> state;
+  std::vector<const parser::parser::Node*> atomNodes(atoms.size());
+  std::unordered_map<const parser::parser::Node*, bool> state;
   for (int i = 0; i < atoms.size(); i++) {
     atomStrings[i] = atoms[i].first;
     atomNodes[i] = atoms[i].second;
@@ -105,7 +107,7 @@ constructTruthTable(std::map<std::vector<bool>, bool>& table,
 }
 
 std::variant<bool, error::eval::unexpected_node, error::eval::mismatched_atoms>
-printTruthTable(parser::AST* ast) {
+printTruthTable(parser::parser::AST* ast) {
   std::map<std::vector<bool>, bool> table;
   logger::Logger::dispatchLog(logger::infoLog{"Constructing truth table"});
   const auto truthTableResult =

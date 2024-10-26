@@ -13,6 +13,15 @@ struct unexpected_token : error::error {
 };
 
 }  // namespace parser
+
+namespace tokenizer {
+
+struct invalid_symbol : error::error {
+  invalid_symbol(std::string c);
+};
+
+}  // namespace tokenizer
+
 }  // namespace error
 
 #endif  // CNF_CONVERTOR_ERROR_PARSER

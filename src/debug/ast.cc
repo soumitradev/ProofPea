@@ -45,10 +45,10 @@ void graphvizClose(GVC_t *ctx, Agraph_t *graph) {
 }
 
 Agnode_t *renderNode(Agraph_t *graph, void *nodePtr, const std::string lexeme,
-                     parser::NodeType type) {
+                     parser::parser::NodeType type) {
   // TODO: Track errors in this function
   char *name = nullptr;
-  if (type == parser::ATOM || type == parser::ABSOLUTE) {
+  if (type == parser::parser::ATOM || type == parser::parser::ABSOLUTE) {
     // Use the lexeme of the atom itself, since atoms with the same lexeme are
     // the same
     logger::Logger::dispatchLog(
@@ -78,24 +78,24 @@ Agnode_t *renderNode(Agraph_t *graph, void *nodePtr, const std::string lexeme,
   logger::Logger::dispatchLog(
       logger::debugLog{"Setting display color of node \"" + lexeme + "\""});
   // Render atoms in red
-  if (type == parser::ATOM) {
+  if (type == parser::parser::ATOM) {
     agsafeset(renderedNode, (char *)"color", (char *)"red", (char *)"");
   }
   // Render absolutes in blue
-  if (type == parser::ABSOLUTE) {
+  if (type == parser::parser::ABSOLUTE) {
     agsafeset(renderedNode, (char *)"color", (char *)"blue", (char *)"");
   }
 
   return renderedNode;
 }
 
-void renderASTRecursive(const Agraph_t *graph, const parser::Node *node,
+void renderASTRecursive(const Agraph_t *graph, const parser::parser::Node *node,
                         const Agnode_t *parent, bool isLeftChild) {
   // TODO: Track errors in this function
   Agnode_t *renderedNode = nullptr;
-  if (node->type == parser::UNARY) {
+  if (node->type == parser::parser::UNARY) {
     const auto unaryOperatorNode =
-        std::get<const parser::UnaryOperator *>(node->node);
+        std::get<const parser::parser::UnaryOperator *>(node->node);
 
     logger::Logger::dispatchLog(logger::debugLog{
         "Rendering unary operator \"" + unaryOperatorNode->op->lexeme +
@@ -103,9 +103,9 @@ void renderASTRecursive(const Agraph_t *graph, const parser::Node *node,
     renderedNode = renderNode((Agraph_t *)graph, (void *)unaryOperatorNode,
                               unaryOperatorNode->op->lexeme, node->type);
     renderASTRecursive(graph, unaryOperatorNode->child, renderedNode, false);
-  } else if (node->type == parser::BINARY) {
+  } else if (node->type == parser::parser::BINARY) {
     const auto binaryOperatorNode =
-        std::get<const parser::BinaryOperator *>(node->node);
+        std::get<const parser::parser::BinaryOperator *>(node->node);
 
     logger::Logger::dispatchLog(logger::debugLog{
         "Rendering binary operator \"" + binaryOperatorNode->op->lexeme +
@@ -115,15 +115,16 @@ void renderASTRecursive(const Agraph_t *graph, const parser::Node *node,
                               binaryOperatorNode->op->lexeme, node->type);
     renderASTRecursive(graph, binaryOperatorNode->left, renderedNode, true);
     renderASTRecursive(graph, binaryOperatorNode->right, renderedNode, false);
-  } else if (node->type == parser::ATOM) {
-    const auto atomNode = std::get<const parser::Atom *>(node->node);
+  } else if (node->type == parser::parser::ATOM) {
+    const auto atomNode = std::get<const parser::parser::Atom *>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{
         "Rendering atom \"" + atomNode->token->lexeme + "\" at position " +
         std::to_string(atomNode->token->position)});
     renderedNode = renderNode((Agraph_t *)graph, (void *)atomNode,
                               atomNode->token->lexeme, node->type);
-  } else if (node->type == parser::ABSOLUTE) {
-    const auto absoluteNode = std::get<const parser::Absolute *>(node->node);
+  } else if (node->type == parser::parser::ABSOLUTE) {
+    const auto absoluteNode =
+        std::get<const parser::parser::Absolute *>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{
         "Rendering absolute \"" + absoluteNode->token->lexeme +
         "\" at position " + std::to_string(absoluteNode->token->position)});
@@ -144,7 +145,7 @@ void renderASTRecursive(const Agraph_t *graph, const parser::Node *node,
   }
 }
 
-void printAST(const parser::AST *ast) {
+void printAST(const parser::parser::AST *ast) {
   // TODO: Track errors in this function
   const auto ctx = graphvizInit();
 

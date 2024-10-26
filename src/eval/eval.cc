@@ -3,11 +3,12 @@
 namespace eval {
 
 std::variant<bool, error::eval::unexpected_node> evaluateSubtree(
-    const parser::Node* root,
-    std::unordered_map<const parser::Node*, bool>& state) {
-  if (root->type == parser::ABSOLUTE) {
+    const parser::parser::Node* root,
+    std::unordered_map<const parser::parser::Node*, bool>& state) {
+  if (root->type == parser::parser::ABSOLUTE) {
     logger::Logger::dispatchLog(logger::debugLog{"Found ABSOLUTE node"});
-    const auto absoluteToken = std::get<const parser::Absolute*>(root->node);
+    const auto absoluteToken =
+        std::get<const parser::parser::Absolute*>(root->node);
     if (absoluteToken->token->type == util::symbols::ABSOLUTETRUE) {
       logger::Logger::dispatchLog(
           logger::debugLog{"Evaluating ABSOLUTE node \"" +
@@ -24,9 +25,9 @@ std::variant<bool, error::eval::unexpected_node> evaluateSubtree(
           absoluteToken->token->lexeme + " at position " +
           std::to_string(absoluteToken->token->position)};
     }
-  } else if (root->type == parser::ATOM) {
+  } else if (root->type == parser::parser::ATOM) {
     logger::Logger::dispatchLog(logger::debugLog{"Found ATOM node"});
-    const auto atomToken = std::get<const parser::Atom*>(root->node);
+    const auto atomToken = std::get<const parser::parser::Atom*>(root->node);
     logger::Logger::dispatchLog(logger::debugLog{
         "Finding atom node \"" + atomToken->token->lexeme + "\" in state map"});
     const auto atomValue = state.find(root);
@@ -42,10 +43,10 @@ std::variant<bool, error::eval::unexpected_node> evaluateSubtree(
         "Evaluated atom node \"" + atomToken->token->lexeme +
         "\" in state map as " + (atomValue->second ? "true" : "false")});
     return atomValue->second;
-  } else if (root->type == parser::UNARY) {
+  } else if (root->type == parser::parser::UNARY) {
     logger::Logger::dispatchLog(logger::debugLog{"Found UNARY node"});
     const auto unaryOperator =
-        std::get<const parser::UnaryOperator*>(root->node);
+        std::get<const parser::parser::UnaryOperator*>(root->node);
     if (unaryOperator->op->type == util::symbols::NEG) {
       logger::Logger::dispatchLog(logger::debugLog{"Identified UNARY node \"" +
                                                    unaryOperator->op->lexeme +
@@ -66,10 +67,10 @@ std::variant<bool, error::eval::unexpected_node> evaluateSubtree(
         "Found unexpected node of type UNARY with lexeme " +
         unaryOperator->op->lexeme + " at position " +
         std::to_string(unaryOperator->op->position)};
-  } else if (root->type == parser::BINARY) {
+  } else if (root->type == parser::parser::BINARY) {
     logger::Logger::dispatchLog(logger::debugLog{"Found BINARY node"});
     const auto binaryOperator =
-        std::get<const parser::BinaryOperator*>(root->node);
+        std::get<const parser::parser::BinaryOperator*>(root->node);
 
     logger::Logger::dispatchLog(
         logger::debugLog{"Evaluating left subtree of operator \"" +
@@ -131,15 +132,15 @@ std::variant<bool, error::eval::unexpected_node> evaluateSubtree(
 }
 
 std::variant<bool, error::eval::unexpected_node, error::eval::mismatched_atoms>
-evaluateState(parser::AST* ast,
-              std::unordered_map<const parser::Node*, bool> state) {
+evaluateState(parser::parser::AST* ast,
+              std::unordered_map<const parser::parser::Node*, bool> state) {
   logger::Logger::dispatchLog(
       logger::debugLog{"Checking if AST atoms match state atoms"});
-  std::unordered_set<const parser::Node*> stateNodes;
+  std::unordered_set<const parser::parser::Node*> stateNodes;
   for (auto& x : state) {
     stateNodes.insert(x.first);
   }
-  std::unordered_set<const parser::Node*> astAtoms;
+  std::unordered_set<const parser::parser::Node*> astAtoms;
   for (auto& x : ast->atoms) {
     astAtoms.insert(x.second);
   }

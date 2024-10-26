@@ -14,8 +14,8 @@ int main() {
   logger::Logger::dispatchLog(
       logger::infoLog{log : "User entered formula: " + formula});
 
-  std::vector<tokenizer::Token*> tokens;
-  auto tokenizerResult = tokenizer::tokenize(formula, tokens);
+  std::vector<parser::tokenizer::Token> tokens;
+  auto tokenizerResult = parser::tokenizer::tokenize(formula, tokens);
   if (std::holds_alternative<error::tokenizer::invalid_symbol>(
           tokenizerResult)) {
     const auto error =
@@ -27,8 +27,7 @@ int main() {
     const auto error = std::get<error::unknown::unknown_error>(tokenizerResult);
     logger::Logger::dispatchLog(logger::errorLog{error : error});
     return 125;
-  } else if (!std::holds_alternative<std::vector<tokenizer::Token*>>(
-                 tokenizerResult)) {
+  } else if (!std::holds_alternative<bool>(tokenizerResult)) {
     logger::Logger::dispatchLog(logger::errorLog{
       error : error::unknown::unknown_error(
           "Unknown tokens alternative returned by tokenize()")
@@ -38,12 +37,13 @@ int main() {
 
   std::ostringstream lexemes;
   for (size_t i = 0; i < tokens.size(); i++) {
-    lexemes << tokens[i]->lexeme << "\t";
+    lexemes << tokens[i].lexeme << "\t";
   }
   logger::Logger::dispatchLog(
       logger::infoLog{log : "Tokens detected: " + lexemes.str()});
 
-  const auto syntaxTreeResult = parser::parseAST(tokens);
+  const auto syntaxTreeResult = parser::parser::parseAST(tokens);
+  tokens.clear();
   if (std::holds_alternative<error::parser::unexpected_token>(
           syntaxTreeResult)) {
     const auto error =
@@ -51,7 +51,7 @@ int main() {
     logger::Logger::dispatchLog(logger::errorLog{error : error});
     return 1;
   }
-  const auto syntaxTree = std::get<parser::AST*>(syntaxTreeResult);
+  const auto syntaxTree = std::get<parser::parser::AST*>(syntaxTreeResult);
 
   debug::ast::printAST(syntaxTree);
 
@@ -69,7 +69,6 @@ int main() {
     return 1;
   }
 
-  parser::deallocAST(syntaxTree);
-  tokenizer::deallocTokens(tokens);
+  parser::parser::deallocAST(syntaxTree);
   return 0;
 }

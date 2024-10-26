@@ -3,6 +3,107 @@
 namespace parser {
 namespace parser {
 
+struct AST* AST::copy(struct AST* ast) {
+  logger::Logger::dispatchLog(logger::infoLog{"Copying AST"});
+  auto copy = new AST{};
+  copy->absolutes.clear();
+  copy->atoms.clear();
+  copy->tokens.clear();
+
+  // Reserve the sizes for all these data structures in advance
+  // Reserving the size for the token vector is especially important because if
+  // the size isn't reserved, the vector can be reallocated and moved around in
+  // memory, causing the recursive copyNode function to break, since it
+  // maintains a pointer to the parent token in the vector while it inserts
+  // child tokens
+  copy->absolutes.reserve(ast->absolutes.size());
+  copy->atoms.reserve(ast->atoms.size());
+  copy->tokens.reserve(ast->tokens.size());
+  copy->root = copyNode(ast->root, copy->tokens, copy->atoms, copy->absolutes);
+  return copy;
+}
+
+const struct Node* AST::copyNode(
+    const struct Node* node, std::vector<tokenizer::Token>& tokens,
+    std::unordered_map<std::string, const Node*>& atoms,
+    std::unordered_map<std::string, const Node*>& absolutes) {
+  if (node->type == NodeType::ABSOLUTE) {
+    const auto parserNode = std::get<const Absolute*>(node->node);
+    logger::Logger::dispatchLog(logger::debugLog{"Identified ABSOLUTE node " +
+                                                 parserNode->token->lexeme +
+                                                 ", checking if node has "
+                                                 "already been copied"});
+    const auto existing = absolutes.find(parserNode->token->lexeme);
+    if (existing == absolutes.end()) {
+      logger::Logger::dispatchLog(
+          logger::debugLog{"Did not find ABSOLUTE node " +
+                           parserNode->token->lexeme + ", copying"});
+      tokens.push_back(*parserNode->token);
+      const auto newNode = new Absolute{(tokens.end() - 1).base()};
+      const auto copyNode = new Node{node->type, newNode};
+      absolutes[parserNode->token->lexeme] = copyNode;
+      return copyNode;
+    }
+    logger::Logger::dispatchLog(logger::debugLog{
+        "Found ABSOLUTE node " + parserNode->token->lexeme + ", returning"});
+    return existing->second;
+  } else if (node->type == NodeType::ATOM) {
+    const auto parserNode = std::get<const Atom*>(node->node);
+    logger::Logger::dispatchLog(logger::debugLog{"Identified ATOM node " +
+                                                 parserNode->token->lexeme +
+                                                 ", checking if node has "
+                                                 "already been copied"});
+    const auto existing = atoms.find(parserNode->token->lexeme);
+    if (existing == atoms.end()) {
+      logger::Logger::dispatchLog(logger::debugLog{
+          "Did not find ATOM node " + parserNode->token->lexeme + ", copying"});
+      tokens.push_back(*parserNode->token);
+      const auto newNode = new Atom{(tokens.end() - 1).base()};
+      const auto copyNode = new Node{node->type, newNode};
+      atoms[parserNode->token->lexeme] = copyNode;
+      return copyNode;
+    }
+    logger::Logger::dispatchLog(logger::debugLog{
+        "Found ATOM node " + parserNode->token->lexeme + ", returning"});
+    return existing->second;
+  } else if (node->type == NodeType::UNARY) {
+    const auto parserNode = std::get<const UnaryOperator*>(node->node);
+    logger::Logger::dispatchLog(logger::debugLog{
+        "Identified UNARY node " + parserNode->op->lexeme + ", copying"});
+    tokens.push_back(*parserNode->op);
+    const auto newTokenPtr = tokens.end() - 1;
+    logger::Logger::dispatchLog(logger::debugLog{
+        "Copying child node for UNARY node " + parserNode->op->lexeme});
+    const auto newChild = copyNode(parserNode->child, tokens, atoms, absolutes);
+    const auto newNode = new UnaryOperator{newTokenPtr.base(), newChild};
+    return new Node{node->type, newNode};
+  } else if (node->type == NodeType::BINARY) {
+    const auto parserNode = std::get<const BinaryOperator*>(node->node);
+    logger::Logger::dispatchLog(logger::debugLog{
+        "Identified BINARY node " + parserNode->op->lexeme + ", copying"});
+    tokens.push_back(*parserNode->op);
+    const auto newTokenPtr = tokens.end() - 1;
+    logger::Logger::dispatchLog(logger::debugLog{
+        "Copying left child node for BINARY node " + parserNode->op->lexeme});
+    const auto newLeftChild =
+        copyNode(parserNode->left, tokens, atoms, absolutes);
+    logger::Logger::dispatchLog(logger::debugLog{
+        "Copying right child node for BINARY node " + parserNode->op->lexeme});
+    const auto newRightChild =
+        copyNode(parserNode->right, tokens, atoms, absolutes);
+    const auto newNode =
+        new BinaryOperator{newTokenPtr.base(), newLeftChild, newRightChild};
+
+    return new Node{node->type, newNode};
+  }
+
+  logger::Logger::dispatchLog(logger::errorLog{
+    error : error::parser::unexpected_token{
+        "Encountered unexpected token while copying AST"}
+  });
+  return nullptr;
+}
+
 std::variant<
     std::pair<const Node*, std::vector<tokenizer::Token>::const_iterator>,
     error::parser::unexpected_token>

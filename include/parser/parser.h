@@ -45,9 +45,18 @@ struct AST {
   std::vector<tokenizer::Token> tokens;
   std::unordered_map<std::string, const Node *> atoms;
   std::unordered_map<std::string, const Node *> absolutes;
+  AST() { this->root = nullptr; }
   AST(const std::vector<tokenizer::Token> &tokens) {
     this->tokens = std::vector<tokenizer::Token>(tokens);
   }
+
+  static struct AST *copy(struct AST *ast);
+
+ private:
+  static const struct Node *copyNode(
+      const struct Node *node, std::vector<tokenizer::Token> &tokens,
+      std::unordered_map<std::string, const Node *> &atoms,
+      std::unordered_map<std::string, const Node *> &absolutes);
 };
 
 std::variant<

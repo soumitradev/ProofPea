@@ -8,6 +8,11 @@ unexpected_token::unexpected_token(std::string c) {
   cause = c;
 }
 
+unexpected_node::unexpected_node(std::string c) {
+  error = "UnexpectedNode";
+  cause = c;
+}
+
 }  // namespace parser
 
 namespace tokenizer {

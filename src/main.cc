@@ -52,11 +52,15 @@ int main() {
     return 1;
   }
   const auto syntaxTree = std::get<parser::parser::AST*>(syntaxTreeResult);
+  const auto copySyntaxTree = parser::parser::AST::copy(syntaxTree);
+  const auto copyCopySyntaxTree = parser::parser::AST::copy(copySyntaxTree);
+  parser::parser::deallocAST(syntaxTree);
 
-  debug::ast::printAST(syntaxTree);
+  debug::ast::printAST(copySyntaxTree);
+  debug::ast::printAST(copyCopySyntaxTree);
 
   const auto truthTableResult =
-      truth_table::tabulator::printTruthTable(syntaxTree);
+      truth_table::tabulator::printTruthTable(copySyntaxTree);
   if (std::holds_alternative<error::eval::unexpected_node>(truthTableResult)) {
     const auto error = std::get<error::eval::unexpected_node>(truthTableResult);
     logger::Logger::dispatchLog(logger::errorLog{error : error});
@@ -69,6 +73,25 @@ int main() {
     return 1;
   }
 
-  parser::parser::deallocAST(syntaxTree);
+  const auto copyTruthTableResult =
+      truth_table::tabulator::printTruthTable(copyCopySyntaxTree);
+  if (std::holds_alternative<error::eval::unexpected_node>(
+          copyTruthTableResult)) {
+    const auto error =
+        std::get<error::eval::unexpected_node>(copyTruthTableResult);
+    logger::Logger::dispatchLog(logger::errorLog{error : error});
+    return 1;
+  }
+  if (std::holds_alternative<error::eval::mismatched_atoms>(
+          copyTruthTableResult)) {
+    const auto error =
+        std::get<error::eval::mismatched_atoms>(copyTruthTableResult);
+    logger::Logger::dispatchLog(logger::errorLog{error : error});
+    return 1;
+  }
+
+  parser::parser::deallocAST(copySyntaxTree);
+  parser::parser::deallocAST(copyCopySyntaxTree);
+  logger::Logger::freeLogger();
   return 0;
 }

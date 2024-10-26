@@ -11,6 +11,9 @@ namespace parser {
 struct unexpected_token : error::error {
   unexpected_token(std::string c);
 };
+struct unexpected_node : error::error {
+  unexpected_node(std::string c);
+};
 
 }  // namespace parser
 

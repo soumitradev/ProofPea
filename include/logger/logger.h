@@ -64,6 +64,12 @@ class Logger {
 
  public:
   Logger(const Logger& obj) = delete;
+  static Logger* freeLogger() {
+    if (instance != nullptr) {
+      delete instance;
+    }
+    return nullptr;
+  }
   static Logger* initLogger(Level minimumLogLevel) {
     if (instance == nullptr) {
       instance = new Logger(minimumLogLevel);

@@ -42,29 +42,29 @@ struct Node {
 
 struct AST {
   const struct Node *root;
-  std::vector<tokenizer::Token> tokens;
+  std::vector<tokenizer::Token *> tokens;
   std::unordered_map<std::string, const Node *> atoms;
   std::unordered_map<std::string, const Node *> absolutes;
   AST() { this->root = nullptr; }
-  AST(const std::vector<tokenizer::Token> &tokens) {
-    this->tokens = std::vector<tokenizer::Token>(tokens);
+  AST(const std::vector<tokenizer::Token *> &tokens) {
+    this->tokens = std::vector<tokenizer::Token *>(tokens);
   }
 
   static struct AST *copy(struct AST *ast);
 
  private:
   static const struct Node *copyNode(
-      const struct Node *node, std::vector<tokenizer::Token> &tokens,
+      const struct Node *node, std::vector<tokenizer::Token *> &tokens,
       std::unordered_map<std::string, const Node *> &atoms,
       std::unordered_map<std::string, const Node *> &absolutes);
 };
 
 std::variant<
-    std::pair<const Node *, std::vector<tokenizer::Token>::const_iterator>,
+    std::pair<const Node *, std::vector<tokenizer::Token *>::const_iterator>,
     error::parser::unexpected_token>
-expression(std::vector<tokenizer::Token>::const_iterator tokenPtr, AST *ast);
+expression(std::vector<tokenizer::Token *>::const_iterator tokenPtr, AST *ast);
 std::variant<AST *, error::parser::unexpected_token> parseAST(
-    const std::vector<tokenizer::Token> &tokens);
+    const std::vector<tokenizer::Token *> &tokens);
 
 void deallocAST(AST *ast);
 }  // namespace parser

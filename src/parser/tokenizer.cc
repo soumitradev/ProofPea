@@ -3,7 +3,7 @@
 namespace parser {
 namespace tokenizer {
 
-std::variant<Token, util::symbols::end_of_formula,
+std::variant<Token*, util::symbols::end_of_formula,
              error::tokenizer::invalid_symbol>
 getNextToken(std::string::const_iterator start, std::string::const_iterator ptr,
              std::string::const_iterator end) {
@@ -19,8 +19,8 @@ getNextToken(std::string::const_iterator start, std::string::const_iterator ptr,
         log : "Classified incoming token as long symbol at position " +
         std::to_string(std::distance(start, ptr))
       });
-      return Token{util::symbols::IMPL, util::symbols::getLongerSymbol(ptr),
-                   position};
+      return new Token{util::symbols::IMPL, util::symbols::getLongerSymbol(ptr),
+                       position};
     } else {
       logger::Logger::dispatchLog(logger::debugLog{
         log : "Classified incoming token as short symbol at position " +
@@ -57,15 +57,15 @@ getNextToken(std::string::const_iterator start, std::string::const_iterator ptr,
           return error::tokenizer::invalid_symbol(ss.str());
           break;
       }
-      return Token{type, std::string(1, *ptr), position};
+      return new Token{type, std::string(1, *ptr), position};
     }
   } else if (util::symbols::checkAtom(*ptr)) {
     logger::Logger::dispatchLog(logger::debugLog{
       log : "Classified incoming token as atom at position " +
       std::to_string(std::distance(start, ptr))
     });
-    return Token{util::symbols::ATOM, util::symbols::getAtom(ptr, end),
-                 position};
+    return new Token{util::symbols::ATOM, util::symbols::getAtom(ptr, end),
+                     position};
   } else {
     std::stringstream ss;
     ss << "Invalid symbol at character: " << position << ", found: " << *ptr;
@@ -75,7 +75,7 @@ getNextToken(std::string::const_iterator start, std::string::const_iterator ptr,
 
 std::variant<bool, error::tokenizer::invalid_symbol,
              error::unknown::unknown_error>
-tokenize(std::string const formula, std::vector<tokenizer::Token>& tokens) {
+tokenize(std::string const formula, std::vector<tokenizer::Token*>& tokens) {
   auto ptr = formula.begin();
   while (ptr != formula.end()) {
     if (util::symbols::checkWhitespace(*ptr)) {
@@ -88,15 +88,15 @@ tokenize(std::string const formula, std::vector<tokenizer::Token>& tokens) {
       }
     }
     const auto next = getNextToken(formula.begin(), ptr, formula.end());
-    if (std::holds_alternative<Token>(next)) {
-      const auto token = std::get<Token>(next);
+    if (std::holds_alternative<Token*>(next)) {
+      const auto token = std::get<Token*>(next);
 
       tokens.push_back(token);
-      ptr += token.lexeme.length();
+      ptr += token->lexeme.length();
 
       logger::Logger::dispatchLog(logger::debugLog{
-        log : "Detected token: " + token.lexeme +
-        " at: " + std::to_string(token.position)
+        log : "Detected token: " + token->lexeme +
+        " at: " + std::to_string(token->position)
       });
     } else if (std::holds_alternative<util::symbols::end_of_formula>(next)) {
       logger::Logger::dispatchLog(logger::

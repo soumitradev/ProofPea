@@ -14,7 +14,7 @@ int main() {
   logger::Logger::dispatchLog(
       logger::infoLog{log : "User entered formula: " + formula});
 
-  std::vector<parser::tokenizer::Token> tokens;
+  std::vector<parser::tokenizer::Token*> tokens;
   auto tokenizerResult = parser::tokenizer::tokenize(formula, tokens);
   if (std::holds_alternative<error::tokenizer::invalid_symbol>(
           tokenizerResult)) {
@@ -37,7 +37,7 @@ int main() {
 
   std::ostringstream lexemes;
   for (size_t i = 0; i < tokens.size(); i++) {
-    lexemes << tokens[i].lexeme << "\t";
+    lexemes << tokens[i]->lexeme << "\t";
   }
   logger::Logger::dispatchLog(
       logger::infoLog{log : "Tokens detected: " + lexemes.str()});

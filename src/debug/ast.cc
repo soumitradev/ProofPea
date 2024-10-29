@@ -87,7 +87,7 @@ void renderASTRecursive(const Agraph_t *graph, const parser::parser::Node *node,
   Agnode_t *renderedNode = nullptr;
   if (node->type == parser::parser::UNARY) {
     const auto unaryOperatorNode =
-        std::get<const parser::parser::UnaryOperator *>(node->node);
+        std::get<parser::parser::UnaryOperator *>(node->node);
 
     logger::Logger::dispatchLog(logger::debugLog{
         "Rendering unary operator \"" + unaryOperatorNode->op->lexeme +
@@ -97,7 +97,7 @@ void renderASTRecursive(const Agraph_t *graph, const parser::parser::Node *node,
     renderASTRecursive(graph, unaryOperatorNode->child, renderedNode, false);
   } else if (node->type == parser::parser::BINARY) {
     const auto binaryOperatorNode =
-        std::get<const parser::parser::BinaryOperator *>(node->node);
+        std::get<parser::parser::BinaryOperator *>(node->node);
 
     logger::Logger::dispatchLog(logger::debugLog{
         "Rendering binary operator \"" + binaryOperatorNode->op->lexeme +
@@ -108,15 +108,14 @@ void renderASTRecursive(const Agraph_t *graph, const parser::parser::Node *node,
     renderASTRecursive(graph, binaryOperatorNode->left, renderedNode, true);
     renderASTRecursive(graph, binaryOperatorNode->right, renderedNode, false);
   } else if (node->type == parser::parser::ATOM) {
-    const auto atomNode = std::get<const parser::parser::Atom *>(node->node);
+    const auto atomNode = std::get<parser::parser::Atom *>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{
         "Rendering atom \"" + atomNode->token->lexeme + "\" at position " +
         std::to_string(atomNode->token->position)});
     renderedNode = renderNode((Agraph_t *)graph, (void *)atomNode,
                               atomNode->token->lexeme, node->type);
   } else if (node->type == parser::parser::ABSOLUTE) {
-    const auto absoluteNode =
-        std::get<const parser::parser::Absolute *>(node->node);
+    const auto absoluteNode = std::get<parser::parser::Absolute *>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{
         "Rendering absolute \"" + absoluteNode->token->lexeme +
         "\" at position " + std::to_string(absoluteNode->token->position)});

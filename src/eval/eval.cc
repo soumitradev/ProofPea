@@ -7,8 +7,7 @@ std::variant<bool, error::eval::unexpected_node> evaluateSubtree(
     std::unordered_map<const parser::parser::Node*, bool>& state) {
   if (root->type == parser::parser::ABSOLUTE) {
     logger::Logger::dispatchLog(logger::debugLog{"Found ABSOLUTE node"});
-    const auto absoluteToken =
-        std::get<const parser::parser::Absolute*>(root->node);
+    const auto absoluteToken = std::get<parser::parser::Absolute*>(root->node);
     if (absoluteToken->token->type == util::symbols::ABSOLUTETRUE) {
       logger::Logger::dispatchLog(
           logger::debugLog{"Evaluating ABSOLUTE node \"" +
@@ -27,7 +26,7 @@ std::variant<bool, error::eval::unexpected_node> evaluateSubtree(
     }
   } else if (root->type == parser::parser::ATOM) {
     logger::Logger::dispatchLog(logger::debugLog{"Found ATOM node"});
-    const auto atomToken = std::get<const parser::parser::Atom*>(root->node);
+    const auto atomToken = std::get<parser::parser::Atom*>(root->node);
     logger::Logger::dispatchLog(logger::debugLog{
         "Finding atom node \"" + atomToken->token->lexeme + "\" in state map"});
     const auto atomValue = state.find(root);
@@ -46,7 +45,7 @@ std::variant<bool, error::eval::unexpected_node> evaluateSubtree(
   } else if (root->type == parser::parser::UNARY) {
     logger::Logger::dispatchLog(logger::debugLog{"Found UNARY node"});
     const auto unaryOperator =
-        std::get<const parser::parser::UnaryOperator*>(root->node);
+        std::get<parser::parser::UnaryOperator*>(root->node);
     if (unaryOperator->op->type == util::symbols::NEG) {
       logger::Logger::dispatchLog(logger::debugLog{"Identified UNARY node \"" +
                                                    unaryOperator->op->lexeme +
@@ -70,7 +69,7 @@ std::variant<bool, error::eval::unexpected_node> evaluateSubtree(
   } else if (root->type == parser::parser::BINARY) {
     logger::Logger::dispatchLog(logger::debugLog{"Found BINARY node"});
     const auto binaryOperator =
-        std::get<const parser::parser::BinaryOperator*>(root->node);
+        std::get<parser::parser::BinaryOperator*>(root->node);
 
     logger::Logger::dispatchLog(
         logger::debugLog{"Evaluating left subtree of operator \"" +

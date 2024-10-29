@@ -10,15 +10,8 @@ struct AST* AST::copy(struct AST* ast) {
   copy->atoms.clear();
   copy->tokens.clear();
 
-  // Reserve the sizes for all these data structures in advance
-  // Reserving the size for the token vector is especially important because if
-  // the size isn't reserved, the vector can be reallocated and moved around in
-  // memory, causing the recursive copyNode function to break, since it
-  // maintains a pointer to the parent token in the vector while it inserts
-  // child tokens
   copy->absolutes.reserve(ast->absolutes.size());
   copy->atoms.reserve(ast->atoms.size());
-  copy->tokens.reserve(ast->tokens.size());
   copy->root = copyNode(ast->root, copy->tokens, copy->atoms, copy->absolutes);
   return copy;
 }
@@ -28,7 +21,7 @@ const struct Node* AST::copyNode(
     std::unordered_map<std::string, const Node*>& atoms,
     std::unordered_map<std::string, const Node*>& absolutes) {
   if (node->type == NodeType::ABSOLUTE) {
-    const auto parserNode = std::get<const Absolute*>(node->node);
+    const auto parserNode = std::get<Absolute*>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{"Identified ABSOLUTE node " +
                                                  parserNode->token->lexeme +
                                                  ", checking if node has "
@@ -48,7 +41,7 @@ const struct Node* AST::copyNode(
         "Found ABSOLUTE node " + parserNode->token->lexeme + ", returning"});
     return existing->second;
   } else if (node->type == NodeType::ATOM) {
-    const auto parserNode = std::get<const Atom*>(node->node);
+    const auto parserNode = std::get<Atom*>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{"Identified ATOM node " +
                                                  parserNode->token->lexeme +
                                                  ", checking if node has "
@@ -67,7 +60,7 @@ const struct Node* AST::copyNode(
         "Found ATOM node " + parserNode->token->lexeme + ", returning"});
     return existing->second;
   } else if (node->type == NodeType::UNARY) {
-    const auto parserNode = std::get<const UnaryOperator*>(node->node);
+    const auto parserNode = std::get<UnaryOperator*>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{
         "Identified UNARY node " + parserNode->op->lexeme + ", copying"});
     tokens.push_back(new tokenizer::Token(*(parserNode->op)));
@@ -78,7 +71,7 @@ const struct Node* AST::copyNode(
     const auto newNode = new UnaryOperator{newTokenPtr, newChild};
     return new Node{node->type, newNode};
   } else if (node->type == NodeType::BINARY) {
-    const auto parserNode = std::get<const BinaryOperator*>(node->node);
+    const auto parserNode = std::get<BinaryOperator*>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{
         "Identified BINARY node " + parserNode->op->lexeme + ", copying"});
     tokens.push_back(new tokenizer::Token(*(parserNode->op)));
@@ -373,6 +366,79 @@ expression(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
   return implication(tokenPtr, ast);
 }
 
+void rebuildTokensRecursive(const Node* node,
+                            std::vector<tokenizer::Token*>& tokens) {
+  if (node->type == NodeType::ABSOLUTE) {
+    const auto parserNode = std::get<Absolute*>(node->node);
+    logger::Logger::dispatchLog(logger::debugLog{"Identified ABSOLUTE node " +
+                                                 parserNode->token->lexeme +
+                                                 ", getting token"});
+    const auto newToken = new tokenizer::Token(*(parserNode->token));
+    parserNode->token = newToken;
+    tokens.push_back(newToken);
+    return;
+  } else if (node->type == NodeType::ATOM) {
+    const auto parserNode = std::get<Atom*>(node->node);
+    logger::Logger::dispatchLog(logger::debugLog{"Identified ATOM node " +
+                                                 parserNode->token->lexeme +
+                                                 ", getting token"});
+    const auto newToken = new tokenizer::Token(*(parserNode->token));
+    parserNode->token = newToken;
+    tokens.push_back(newToken);
+    return;
+  } else if (node->type == NodeType::UNARY) {
+    const auto parserNode = std::get<UnaryOperator*>(node->node);
+    logger::Logger::dispatchLog(logger::debugLog{
+        "Identified UNARY node " + parserNode->op->lexeme + ", getting token"});
+    const auto newToken = new tokenizer::Token(*(parserNode->op));
+    parserNode->op = newToken;
+    tokens.push_back(newToken);
+    logger::Logger::dispatchLog(
+        logger::debugLog{"Getting token from child node of UNARY node " +
+                         parserNode->op->lexeme});
+    rebuildTokensRecursive(parserNode->child, tokens);
+    return;
+  } else if (node->type == NodeType::BINARY) {
+    const auto parserNode = std::get<BinaryOperator*>(node->node);
+    logger::Logger::dispatchLog(logger::debugLog{"Identified BINARY node " +
+                                                 parserNode->op->lexeme +
+                                                 ", getting token"});
+    const auto newToken = new tokenizer::Token(*(parserNode->op));
+    parserNode->op = newToken;
+    tokens.push_back(newToken);
+    logger::Logger::dispatchLog(
+        logger::debugLog{"Getting token from left child node of BINARY node " +
+                         parserNode->op->lexeme});
+    rebuildTokensRecursive(parserNode->left, tokens);
+    logger::Logger::dispatchLog(
+        logger::debugLog{"Getting token from right child node of BINARY node " +
+                         parserNode->op->lexeme});
+    rebuildTokensRecursive(parserNode->right, tokens);
+    return;
+  }
+
+  logger::Logger::dispatchLog(logger::errorLog{
+    error : error::parser::unexpected_token{
+        "Encountered unexpected token while copying AST"}
+  });
+  return;
+}
+
+void rebuildTokens(AST* ast) {
+  std::vector<tokenizer::Token*> newTokens;
+  logger::Logger::dispatchLog(logger::debugLog{
+      "Calling recursive function to start rebuilding tokens"});
+  rebuildTokensRecursive(ast->root, newTokens);
+  logger::Logger::dispatchLog(logger::debugLog{"Deallocating old tokens"});
+  for (auto& x : ast->tokens) {
+    delete x;
+  }
+  ast->tokens.clear();
+  logger::Logger::dispatchLog(
+      logger::debugLog{"Copying over new tokens into AST"});
+  ast->tokens = std::vector<tokenizer::Token*>(newTokens);
+}
+
 std::variant<AST*, error::parser::unexpected_token> parseAST(
     const std::vector<tokenizer::Token*>& tokens) {
   struct AST* ast = new AST(tokens);
@@ -402,19 +468,24 @@ std::variant<AST*, error::parser::unexpected_token> parseAST(
 
   logger::Logger::dispatchLog(logger::infoLog{"AST successfully parsed"});
   ast->root = expr.first;
+
+    logger::Logger::dispatchLog(
+      logger::infoLog{"Cleaning out unused duplicate atom or absolute tokens"});
+  rebuildTokens(ast);
+  
   return ast;
 }
 
 void deallocNodeRecursive(const Node* root,
                           std::unordered_set<const Node*>& deletedAtoms) {
   if (root->type == parser::ATOM) {
-    auto ptr = std::get<const parser::Atom*>(root->node);
+    auto ptr = std::get<parser::Atom*>(root->node);
     delete ptr;
   } else if (root->type == parser::ABSOLUTE) {
-    auto ptr = std::get<const parser::Absolute*>(root->node);
+    auto ptr = std::get<parser::Absolute*>(root->node);
     delete ptr;
   } else if (root->type == parser::BINARY) {
-    auto ptr = std::get<const parser::BinaryOperator*>(root->node);
+    auto ptr = std::get<parser::BinaryOperator*>(root->node);
     if (deletedAtoms.find(ptr->left) == deletedAtoms.end()) {
       deallocNodeRecursive(ptr->left, deletedAtoms);
       deletedAtoms.insert(ptr->left);
@@ -425,7 +496,7 @@ void deallocNodeRecursive(const Node* root,
     }
     delete ptr;
   } else if (root->type == parser::UNARY) {
-    auto ptr = std::get<const parser::UnaryOperator*>(root->node);
+    auto ptr = std::get<parser::UnaryOperator*>(root->node);
     if (deletedAtoms.find(ptr->child) == deletedAtoms.end()) {
       deallocNodeRecursive(ptr->child, deletedAtoms);
       deletedAtoms.insert(ptr->child);

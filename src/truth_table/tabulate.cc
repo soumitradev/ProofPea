@@ -16,8 +16,7 @@ generateStates(std::map<std::vector<bool>, bool>& table,
     stateString << "[";
     for (int i = 0; i < atomState.size(); i++) {
       atomState[i] = state[atomNodes[i]];
-      const auto node =
-          std::get<const parser::parser::Atom*>(atomNodes[i]->node);
+      const auto node = std::get<parser::parser::Atom*>(atomNodes[i]->node);
       stateString << node->token->lexeme << ": " << (atomState[i] ? "1" : "0")
                   << ((i == atomState.size() - 1) ? "" : ", ");
     }
@@ -41,7 +40,7 @@ generateStates(std::map<std::vector<bool>, bool>& table,
     return true;
   }
 
-  const auto node = std::get<const parser::parser::Atom*>((*atomPtr)->node);
+  const auto node = std::get<parser::parser::Atom*>((*atomPtr)->node);
 
   logger::Logger::dispatchLog(logger::debugLog{
       "Setting atom \"" + node->token->lexeme + "\" to false"});

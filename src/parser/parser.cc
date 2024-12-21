@@ -419,7 +419,7 @@ void rebuildTokensRecursive(const Node* node,
 
   logger::Logger::dispatchLog(logger::errorLog{
     error : error::parser::unexpected_token{
-        "Encountered unexpected token while copying AST"}
+        "Encountered unexpected token while rebuilding tokens"}
   });
   return;
 }
@@ -469,10 +469,10 @@ std::variant<AST*, error::parser::unexpected_token> parseAST(
   logger::Logger::dispatchLog(logger::infoLog{"AST successfully parsed"});
   ast->root = expr.first;
 
-    logger::Logger::dispatchLog(
+  logger::Logger::dispatchLog(
       logger::infoLog{"Cleaning out unused duplicate atom or absolute tokens"});
   rebuildTokens(ast);
-  
+
   return ast;
 }
 

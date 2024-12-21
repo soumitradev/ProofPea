@@ -64,6 +64,7 @@ getNextToken(std::string::const_iterator start, std::string::const_iterator ptr,
       log : "Classified incoming token as atom at position " +
       std::to_string(std::distance(start, ptr))
     });
+    // TODO: Allow Tokenizer to de-duplicate tokens
     return new Token{util::symbols::ATOM, util::symbols::getAtom(ptr, end),
                      position};
   } else {

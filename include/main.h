@@ -6,6 +6,7 @@
 #include <logger/logger.h>
 #include <parser/parser.h>
 #include <parser/tokenizer.h>
+#include <transformer/nnf.h>
 #include <truth_table/tabulate.h>
 
 #include <iostream>

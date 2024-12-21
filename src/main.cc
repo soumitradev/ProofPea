@@ -91,6 +91,45 @@ int main() {
   }
 
   parser::parser::deallocAST(copySyntaxTree);
+
+  debug::ast::printAST(copyCopySyntaxTree);
+  const auto nnfTransformResult =
+      transformer::nnf::transformToNNF(copyCopySyntaxTree);
+
+  if (std::holds_alternative<error::eval::unexpected_node>(
+          nnfTransformResult)) {
+    const auto error =
+        std::get<error::eval::unexpected_node>(nnfTransformResult);
+    logger::Logger::dispatchLog(logger::errorLog{error : error});
+    return 1;
+  } else if (std::holds_alternative<bool>(nnfTransformResult)) {
+    if (!std::get<bool>(nnfTransformResult)) {
+      logger::Logger::dispatchLog(logger::errorLog{
+        error : error::unknown::unknown_error{
+            "Encountered unexpected error in from transformToIMPLFREE"}
+      });
+    }
+  }
+
+  debug::ast::printAST(copyCopySyntaxTree);
+
+  const auto copyTruthTableNNFResult =
+      truth_table::tabulator::printTruthTable(copyCopySyntaxTree);
+  if (std::holds_alternative<error::eval::unexpected_node>(
+          copyTruthTableNNFResult)) {
+    const auto error =
+        std::get<error::eval::unexpected_node>(copyTruthTableNNFResult);
+    logger::Logger::dispatchLog(logger::errorLog{error : error});
+    return 1;
+  }
+  if (std::holds_alternative<error::eval::mismatched_atoms>(
+          copyTruthTableNNFResult)) {
+    const auto error =
+        std::get<error::eval::mismatched_atoms>(copyTruthTableNNFResult);
+    logger::Logger::dispatchLog(logger::errorLog{error : error});
+    return 1;
+  }
+
   parser::parser::deallocAST(copyCopySyntaxTree);
   logger::Logger::freeLogger();
   return 0;

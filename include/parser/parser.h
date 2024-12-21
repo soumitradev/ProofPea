@@ -66,6 +66,8 @@ std::variant<AST *, error::parser::unexpected_token> parseAST(
     const std::vector<tokenizer::Token *> &tokens);
 
 void deallocAST(AST *ast);
+void rebuildTokens(AST *ast);
+
 }  // namespace parser
 }  // namespace parser
 

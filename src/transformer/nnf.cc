@@ -30,13 +30,36 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
       logger::Logger::dispatchLog(
           logger::debugLog{"Identified child ABSOLUTE node " +
                            childNode->token->lexeme + ", inverting"});
+      parser::parser::Node* invertedNode;
       if (childNode->token->type == util::symbols::SymbolType::ABSOLUTETRUE) {
-        childNode->token->type = util::symbols::SymbolType::ABSOLUTEFALSE;
-        childNode->token->lexeme = "0";
+        const auto existing = ast->absolutes.find("0");
+        if (existing != ast->absolutes.end()) {
+          invertedNode = existing->second;
+        } else {
+          const auto invertedToken = new parser::tokenizer::Token{
+              util::symbols::SymbolType::ABSOLUTEFALSE, "0", 0};
+          ast->tokens.push_back(invertedToken);
+          const auto invertedAbsolute =
+              new parser::parser::Absolute{invertedToken};
+          invertedNode = new parser::parser::Node{
+              parser::parser::ABSOLUTE, node->parent, invertedAbsolute};
+          ast->absolutes["0"] = invertedNode;
+        }
       } else if (childNode->token->type ==
                  util::symbols::SymbolType::ABSOLUTEFALSE) {
-        childNode->token->type = util::symbols::SymbolType::ABSOLUTETRUE;
-        childNode->token->lexeme = "1";
+        const auto existing = ast->absolutes.find("1");
+        if (existing != ast->absolutes.end()) {
+          invertedNode = existing->second;
+        } else {
+          const auto invertedToken = new parser::tokenizer::Token{
+              util::symbols::SymbolType::ABSOLUTETRUE, "1", 0};
+          ast->tokens.push_back(invertedToken);
+          const auto invertedAbsolute =
+              new parser::parser::Absolute{invertedToken};
+          invertedNode = new parser::parser::Node{
+              parser::parser::ABSOLUTE, node->parent, invertedAbsolute};
+          ast->absolutes["1"] = invertedNode;
+        }
       } else {
         return error::eval::unexpected_node{
             "Encountered unexpected ABSOLUTE child node" +
@@ -44,17 +67,18 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
       }
 
       if (node->parent == nullptr) {
-        ast->root = child;
+        ast->root = invertedNode;
+        ast->root->parent = nullptr;
       } else {
         if (node->parent->type == parser::parser::NodeType::BINARY) {
           const auto parent =
               std::get<parser::parser::BinaryOperator*>(node->parent->node);
-          if (parent->left == node) parent->left = child;
-          if (parent->right == node) parent->right = child;
+          if (parent->left == node) parent->left = invertedNode;
+          if (parent->right == node) parent->right = invertedNode;
         } else if (node->parent->type == parser::parser::NodeType::UNARY) {
           const auto parent =
               std::get<parser::parser::UnaryOperator*>(node->parent->node);
-          if (parent->child == node) parent->child = child;
+          if (parent->child == node) parent->child = invertedNode;
         } else {
           return error::eval::unexpected_node{
               "Encountered unexpected parent node of " +
@@ -144,6 +168,7 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
 
       if (node->parent == nullptr) {
         ast->root = child;
+        ast->root->parent = nullptr;
       } else {
         if (node->parent->type == parser::parser::NodeType::BINARY) {
           const auto parent =

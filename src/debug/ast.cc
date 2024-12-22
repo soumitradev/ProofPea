@@ -82,7 +82,8 @@ Agnode_t *renderNode(Agraph_t *graph, void *nodePtr, const std::string lexeme,
 }
 
 void renderASTRecursive(const Agraph_t *graph, const parser::parser::Node *node,
-                        const Agnode_t *parent, bool isLeftChild) {
+                        const Agnode_t *parent, bool isLeftChild,
+                        bool renderParentEdge) {
   // TODO: Track errors in this function
   Agnode_t *renderedNode = nullptr;
   if (node->type == parser::parser::UNARY) {
@@ -92,9 +93,10 @@ void renderASTRecursive(const Agraph_t *graph, const parser::parser::Node *node,
     logger::Logger::dispatchLog(logger::debugLog{
         "Rendering unary operator \"" + unaryOperatorNode->op->lexeme +
         "\" at position " + std::to_string(unaryOperatorNode->op->position)});
-    renderedNode = renderNode((Agraph_t *)graph, (void *)unaryOperatorNode,
+    renderedNode = renderNode((Agraph_t *)graph, (void *)node,
                               unaryOperatorNode->op->lexeme, node->type);
-    renderASTRecursive(graph, unaryOperatorNode->child, renderedNode, false);
+    renderASTRecursive(graph, unaryOperatorNode->child, renderedNode, false,
+                       renderParentEdge);
   } else if (node->type == parser::parser::BINARY) {
     const auto binaryOperatorNode =
         std::get<parser::parser::BinaryOperator *>(node->node);
@@ -103,23 +105,25 @@ void renderASTRecursive(const Agraph_t *graph, const parser::parser::Node *node,
         "Rendering binary operator \"" + binaryOperatorNode->op->lexeme +
         "\" at position " + std::to_string(binaryOperatorNode->op->position)});
 
-    renderedNode = renderNode((Agraph_t *)graph, (void *)binaryOperatorNode,
+    renderedNode = renderNode((Agraph_t *)graph, (void *)node,
                               binaryOperatorNode->op->lexeme, node->type);
-    renderASTRecursive(graph, binaryOperatorNode->left, renderedNode, true);
-    renderASTRecursive(graph, binaryOperatorNode->right, renderedNode, false);
+    renderASTRecursive(graph, binaryOperatorNode->left, renderedNode, true,
+                       renderParentEdge);
+    renderASTRecursive(graph, binaryOperatorNode->right, renderedNode, false,
+                       renderParentEdge);
   } else if (node->type == parser::parser::ATOM) {
     const auto atomNode = std::get<parser::parser::Atom *>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{
         "Rendering atom \"" + atomNode->token->lexeme + "\" at position " +
         std::to_string(atomNode->token->position)});
-    renderedNode = renderNode((Agraph_t *)graph, (void *)atomNode,
+    renderedNode = renderNode((Agraph_t *)graph, (void *)node,
                               atomNode->token->lexeme, node->type);
   } else if (node->type == parser::parser::ABSOLUTE) {
     const auto absoluteNode = std::get<parser::parser::Absolute *>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{
         "Rendering absolute \"" + absoluteNode->token->lexeme +
         "\" at position " + std::to_string(absoluteNode->token->position)});
-    renderedNode = renderNode((Agraph_t *)graph, (void *)absoluteNode,
+    renderedNode = renderNode((Agraph_t *)graph, (void *)node,
                               absoluteNode->token->lexeme, node->type);
   }
 
@@ -134,15 +138,23 @@ void renderASTRecursive(const Agraph_t *graph, const parser::parser::Node *node,
     agsafeset((void *)edge, (char *)"label", (char *)(isLeftChild ? "L" : "R"),
               (char *)"");
   }
+
+  if (renderParentEdge) {
+    logger::Logger::dispatchLog(
+        logger::debugLog{"Rendering edge from \"" + currentLabel +
+                         "\" to parent \"" + parentLabel + "\""});
+    edge = agedge((Agraph_t *)graph, renderedNode, (Agnode_t *)parent, 0, 1);
+    agsafeset((void *)edge, (char *)"color", (char *)"blue", (char *)"");
+  }
 }
 
-void printAST(const parser::parser::AST *ast) {
+void printAST(const parser::parser::AST *ast, bool renderParentEdge) {
   // TODO: Track errors in this function
   const auto ctx = graphvizInit();
 
   logger::Logger::dispatchLog(logger::infoLog{"Starting the AST render"});
   Agraph_t *astGraph = agopen((char *)"g", Agdirected, 0);
-  renderASTRecursive(astGraph, ast->root, nullptr, false);
+  renderASTRecursive(astGraph, ast->root, nullptr, false, renderParentEdge);
 
   graphvizClose(ctx, astGraph);
 }

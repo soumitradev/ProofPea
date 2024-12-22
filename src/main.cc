@@ -56,8 +56,8 @@ int main() {
   const auto copyCopySyntaxTree = parser::parser::AST::copy(copySyntaxTree);
   parser::parser::deallocAST(syntaxTree);
 
-  debug::ast::printAST(copySyntaxTree);
-  debug::ast::printAST(copyCopySyntaxTree);
+  debug::ast::printAST(copySyntaxTree, false);
+  debug::ast::printAST(copyCopySyntaxTree, false);
 
   const auto truthTableResult =
       truth_table::tabulator::printTruthTable(copySyntaxTree);
@@ -92,9 +92,9 @@ int main() {
 
   parser::parser::deallocAST(copySyntaxTree);
 
-  debug::ast::printAST(copyCopySyntaxTree);
-  const auto nnfTransformResult =
-      transformer::nnf::transformToNNF(copyCopySyntaxTree);
+  debug::ast::printAST(copyCopySyntaxTree, false);
+  const auto cnfTransformResult =
+      transformer::cnf::transformToCNF(copyCopySyntaxTree);
 
   if (std::holds_alternative<error::eval::unexpected_node>(
           nnfTransformResult)) {
@@ -111,7 +111,7 @@ int main() {
     }
   }
 
-  debug::ast::printAST(copyCopySyntaxTree);
+  debug::ast::printAST(copyCopySyntaxTree, false);
 
   const auto copyTruthTableNNFResult =
       truth_table::tabulator::printTruthTable(copyCopySyntaxTree);

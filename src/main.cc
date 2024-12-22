@@ -106,7 +106,7 @@ int main() {
     if (!std::get<bool>(nnfTransformResult)) {
       logger::Logger::dispatchLog(logger::errorLog{
         error : error::unknown::unknown_error{
-            "Encountered unexpected error in from transformToIMPLFREE"}
+            "Encountered unexpected error in transformToIMPLFREE"}
       });
     }
   }

@@ -16,7 +16,7 @@ struct AST* AST::copy(struct AST* ast) {
   return copy;
 }
 
-struct Node* AST::copyNode(const struct Node* node,
+struct Node* AST::copyNode(struct Node* node,
                            std::vector<tokenizer::Token*>& tokens,
                            std::unordered_map<std::string, Node*>& atoms,
                            std::unordered_map<std::string, Node*>& absolutes) {
@@ -33,7 +33,7 @@ struct Node* AST::copyNode(const struct Node* node,
                            parserNode->token->lexeme + ", copying"});
       tokens.push_back(new tokenizer::Token(*(parserNode->token)));
       const auto newNode = new Absolute{tokens.back()};
-      const auto copyNode = new Node{node->type, newNode};
+      const auto copyNode = new Node{node->type, nullptr, newNode};
       absolutes[parserNode->token->lexeme] = copyNode;
       return copyNode;
     }
@@ -52,7 +52,7 @@ struct Node* AST::copyNode(const struct Node* node,
           "Did not find ATOM node " + parserNode->token->lexeme + ", copying"});
       tokens.push_back(new tokenizer::Token(*(parserNode->token)));
       const auto newNode = new Atom{tokens.back()};
-      const auto copyNode = new Node{node->type, newNode};
+      const auto copyNode = new Node{node->type, nullptr, newNode};
       atoms[parserNode->token->lexeme] = copyNode;
       return copyNode;
     }
@@ -69,7 +69,8 @@ struct Node* AST::copyNode(const struct Node* node,
         "Copying child node for UNARY node " + parserNode->op->lexeme});
     const auto newChild = copyNode(parserNode->child, tokens, atoms, absolutes);
     const auto newNode = new UnaryOperator{newTokenPtr, newChild};
-    return new Node{node->type, newNode};
+    newChild->parent = new Node{node->type, nullptr, newNode};
+    return newChild->parent;
   } else if (node->type == NodeType::BINARY) {
     const auto parserNode = std::get<BinaryOperator*>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{
@@ -84,10 +85,13 @@ struct Node* AST::copyNode(const struct Node* node,
         "Copying right child node for BINARY node " + parserNode->op->lexeme});
     const auto newRightChild =
         copyNode(parserNode->right, tokens, atoms, absolutes);
-    const auto newNode =
+    const auto newOp =
         new BinaryOperator{newTokenPtr, newLeftChild, newRightChild};
 
-    return new Node{node->type, newNode};
+    const auto newNode = new Node{node->type, nullptr, newOp};
+    newLeftChild->parent = newNode;
+    newRightChild->parent = newNode;
+    return newNode;
   }
 
   logger::Logger::dispatchLog(logger::errorLog{
@@ -121,7 +125,7 @@ primary(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
                          " in hash-map, creating and inserting"});
 
     const auto atom = new Atom{*tokenPtr};
-    const auto atomNode = new Node{parser::ATOM, atom};
+    const auto atomNode = new Node{parser::ATOM, nullptr, atom};
     ast->atoms[(*tokenPtr)->lexeme] = atomNode;
 
     return std::make_pair(atomNode, tokenPtr + 1);
@@ -143,7 +147,7 @@ primary(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
                          " in hash-map, creating and inserting"});
 
     const auto absolute = new Absolute{*tokenPtr};
-    const auto absoluteNode = new Node{parser::ABSOLUTE, absolute};
+    const auto absoluteNode = new Node{parser::ABSOLUTE, nullptr, absolute};
     ast->absolutes[(*tokenPtr)->lexeme] = absoluteNode;
 
     return std::make_pair(absoluteNode, tokenPtr + 1);
@@ -210,7 +214,8 @@ negation(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
         negationResult);
     const auto operatorStruct =
         new UnaryOperator{*tokenPtr, negationExpr.first};
-    const auto expr = new Node{parser::UNARY, operatorStruct};
+    const auto expr = new Node{parser::UNARY, nullptr, operatorStruct};
+    negationExpr.first->parent = expr;
     return std::make_pair(expr, negationExpr.second);
   }
 
@@ -254,7 +259,10 @@ conjunction(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
         rightNegationResult);
     const auto operatorStruct =
         new BinaryOperator{*tokenPtr, expr, rightNegationExpr.first};
-    expr = new Node{parser::BINARY, operatorStruct};
+    const auto newExpr = new Node{parser::BINARY, nullptr, operatorStruct};
+    expr->parent = newExpr;
+    rightNegationExpr.first->parent = newExpr;
+    expr = newExpr;
     tokenPtr = rightNegationExpr.second;
   }
 
@@ -299,7 +307,10 @@ disjunction(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
         rightConjunctionResult);
     const auto operatorStruct =
         new BinaryOperator{*tokenPtr, expr, rightConjunctionExpr.first};
-    expr = new Node{parser::BINARY, operatorStruct};
+    const auto newExpr = new Node{parser::BINARY, nullptr, operatorStruct};
+    expr->parent = newExpr;
+    rightConjunctionExpr.first->parent = newExpr;
+    expr = newExpr;
     tokenPtr = rightConjunctionExpr.second;
   }
 
@@ -344,7 +355,9 @@ implication(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
         implicationResult);
     const auto operatorStruct =
         new BinaryOperator{*op, disjunctionExpr.first, implicationExpr.first};
-    expr = new Node{parser::BINARY, operatorStruct};
+    expr = new Node{parser::BINARY, nullptr, operatorStruct};
+    disjunctionExpr.first->parent = expr;
+    implicationExpr.first->parent = expr;
     tokenPtr = implicationExpr.second;
   }
 

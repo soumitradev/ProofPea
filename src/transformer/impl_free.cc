@@ -4,7 +4,7 @@ namespace transformer {
 namespace impl_free {
 
 std::variant<bool, error::eval::unexpected_node> transformToIMPLFREERecursive(
-    const parser::parser::Node* node) {
+    parser::parser::Node* node) {
   if (node->type == parser::parser::NodeType::ABSOLUTE) {
     const auto parserNode = std::get<parser::parser::Absolute*>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{"Identified ABSOLUTE node " +
@@ -41,7 +41,8 @@ std::variant<bool, error::eval::unexpected_node> transformToIMPLFREERecursive(
       const auto negationOp =
           new parser::parser::UnaryOperator{negationToken, parserNode->left};
       const auto negationNode =
-          new parser::parser::Node{parser::parser::UNARY, negationOp};
+          new parser::parser::Node{parser::parser::UNARY, node, negationOp};
+      parserNode->left->parent = negationNode;
       parserNode->left = negationNode;
     }
     logger::Logger::dispatchLog(

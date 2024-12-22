@@ -4,7 +4,7 @@ namespace transformer {
 namespace nnf {
 
 std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
-    parser::parser::Node* node) {
+    parser::parser::Node* node, parser::parser::AST* ast) {
   if (node->type == parser::parser::NodeType::ABSOLUTE) {
     const auto parserNode = std::get<parser::parser::Absolute*>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{"Identified ABSOLUTE node " +
@@ -43,11 +43,28 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
       logger::Logger::dispatchLog(
           logger::debugLog{"Identified child UNARY node " +
                            childNode->op->lexeme + ", reducing"});
+
       const auto grandchild = childNode->child;
-      delete parserNode;
+      if (node->parent == nullptr) {
+        ast->root = grandchild;
+      } else {
+        if (node->parent->type == parser::parser::NodeType::BINARY) {
+          const auto parent =
+              std::get<parser::parser::BinaryOperator*>(node->parent->node);
+          if (parent->left == node) parent->left = grandchild;
+          if (parent->right == node) parent->right = grandchild;
+        } else if (node->parent->type == parser::parser::NodeType::UNARY) {
+          const auto parent =
+              std::get<parser::parser::UnaryOperator*>(node->parent->node);
+          if (parent->child == node) parent->child = grandchild;
+        } else {
+          return error::eval::unexpected_node{
+              "Encountered unexpected parent node of " +
+              parserNode->op->lexeme + " in transformToNNFRecursive"};
+        }
+      }
+      delete node;
       delete child;
-      node->type = grandchild->type;
-      node->node = grandchild->node;
       return true;
     } else if (child->type == parser::parser::NodeType::BINARY) {
       auto childNode = std::get<parser::parser::BinaryOperator*>(child->node);
@@ -59,15 +76,17 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
           new parser::tokenizer::Token{util::symbols::NEG, "~", 0};
       const auto leftNegationOp =
           new parser::parser::UnaryOperator{leftNegationToken, childNode->left};
-      const auto leftNegationNode =
-          new parser::parser::Node{parser::parser::UNARY, leftNegationOp};
+      const auto leftNegationNode = new parser::parser::Node{
+          parser::parser::UNARY, child, leftNegationOp};
+      childNode->left->parent = leftNegationNode;
 
       const auto rightNegationToken =
           new parser::tokenizer::Token{util::symbols::NEG, "~", 0};
       const auto rightNegationOp = new parser::parser::UnaryOperator{
           rightNegationToken, childNode->right};
-      const auto rightNegationNode =
-          new parser::parser::Node{parser::parser::UNARY, rightNegationOp};
+      const auto rightNegationNode = new parser::parser::Node{
+          parser::parser::UNARY, child, rightNegationOp};
+      childNode->right->parent = rightNegationNode;
 
       childNode->left = leftNegationNode;
       childNode->right = rightNegationNode;
@@ -80,20 +99,36 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
         childNode->op->lexeme = "+";
         childNode->op->type = util::symbols::DISJUNCT;
       } else {
-        logger::Logger::dispatchLog(logger::errorLog{
-          error : error::unknown::unknown_error{
-              "Encountered unexpected IMPL in transformToNNFRecursive"}
-        });
-        return false;
+        return error::eval::unexpected_node{"Encountered unexpected node " +
+                                            childNode->op->lexeme +
+                                            " in transformToNNFRecursive"};
       }
-      delete parserNode;
-      node->node = child->node;
-      node->type = child->type;
+
+      if (node->parent == nullptr) {
+        ast->root = child;
+      } else {
+        if (node->parent->type == parser::parser::NodeType::BINARY) {
+          const auto parent =
+              std::get<parser::parser::BinaryOperator*>(node->parent->node);
+          if (parent->left == node) parent->left = child;
+          if (parent->right == node) parent->right = child;
+        } else if (node->parent->type == parser::parser::NodeType::UNARY) {
+          const auto parent =
+              std::get<parser::parser::UnaryOperator*>(node->parent->node);
+          if (parent->child == node) parent->child = child;
+        } else {
+          return error::eval::unexpected_node{
+              "Encountered unexpected parent node of " +
+              parserNode->op->lexeme + " in transformToNNFRecursive"};
+        }
+      }
+      delete node;
 
       logger::Logger::dispatchLog(logger::debugLog{
           "Finished simplifying BINARY child node from " + prevLexeme + " to " +
           childNode->op->lexeme + ", checking children for NNF"});
-      const auto leftTransformResult = transformToNNFRecursive(childNode->left);
+      const auto leftTransformResult =
+          transformToNNFRecursive(childNode->left, ast);
       if (std::holds_alternative<error::eval::unexpected_node>(
               leftTransformResult)) {
         return std::get<error::eval::unexpected_node>(leftTransformResult);
@@ -102,7 +137,7 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
       }
 
       const auto rightTransformResult =
-          transformToNNFRecursive(childNode->right);
+          transformToNNFRecursive(childNode->right, ast);
       if (std::holds_alternative<error::eval::unexpected_node>(
               rightTransformResult)) {
         return std::get<error::eval::unexpected_node>(rightTransformResult);
@@ -118,13 +153,8 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
       });
       return false;
     }
-
-    logger::Logger::dispatchLog(logger::errorLog{
-      error : error::parser::unexpected_token{
-          "Encountered unexpected token while checking child node of unary in "
-          "NNF"}
-    });
-    return false;
+    return error::eval::unexpected_node{
+        "Encountered unknown type of child node in transformToNNFRecursive"};
 
   } else if (node->type == parser::parser::NodeType::BINARY) {
     const auto parserNode =
@@ -132,7 +162,8 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
     logger::Logger::dispatchLog(
         logger::debugLog{"Identified BINARY node " + parserNode->op->lexeme +
                          ", checking children for NNF"});
-    const auto leftTransformResult = transformToNNFRecursive(parserNode->left);
+    const auto leftTransformResult =
+        transformToNNFRecursive(parserNode->left, ast);
     if (std::holds_alternative<error::eval::unexpected_node>(
             leftTransformResult)) {
       return std::get<error::eval::unexpected_node>(leftTransformResult);
@@ -141,7 +172,7 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
     }
 
     const auto rightTransformResult =
-        transformToNNFRecursive(parserNode->right);
+        transformToNNFRecursive(parserNode->right, ast);
     if (std::holds_alternative<error::eval::unexpected_node>(
             rightTransformResult)) {
       return std::get<error::eval::unexpected_node>(rightTransformResult);
@@ -181,7 +212,7 @@ std::variant<bool, error::eval::unexpected_node> transformToNNF(
   }
   logger::Logger::dispatchLog(logger::debugLog{
       "Finished IMPL_FREE transformation, starting NNF transformer"});
-  const auto transformResult = transformToNNFRecursive(ast->root);
+  const auto transformResult = transformToNNFRecursive(ast->root, ast);
   if (std::holds_alternative<error::eval::unexpected_node>(transformResult)) {
     return std::get<error::eval::unexpected_node>(transformResult);
   } else if (std::holds_alternative<bool>(transformResult)) {

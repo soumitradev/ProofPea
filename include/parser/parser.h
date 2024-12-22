@@ -35,6 +35,7 @@ struct BinaryOperator {
 
 struct Node {
   NodeType type;
+  struct Node *parent;
   std::variant<UnaryOperator *, BinaryOperator *, Atom *, Absolute *> node;
 };
 
@@ -49,10 +50,8 @@ struct AST {
   }
 
   static struct AST *copy(struct AST *ast);
-
- private:
   static struct Node *copyNode(
-      const struct Node *node, std::vector<tokenizer::Token *> &tokens,
+      struct Node *node, std::vector<tokenizer::Token *> &tokens,
       std::unordered_map<std::string, Node *> &atoms,
       std::unordered_map<std::string, Node *> &absolutes);
 };

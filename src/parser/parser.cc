@@ -16,10 +16,10 @@ struct AST* AST::copy(struct AST* ast) {
   return copy;
 }
 
-const struct Node* AST::copyNode(
-    const struct Node* node, std::vector<tokenizer::Token*>& tokens,
-    std::unordered_map<std::string, const Node*>& atoms,
-    std::unordered_map<std::string, const Node*>& absolutes) {
+struct Node* AST::copyNode(const struct Node* node,
+                           std::vector<tokenizer::Token*>& tokens,
+                           std::unordered_map<std::string, Node*>& atoms,
+                           std::unordered_map<std::string, Node*>& absolutes) {
   if (node->type == NodeType::ABSOLUTE) {
     const auto parserNode = std::get<Absolute*>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{"Identified ABSOLUTE node " +
@@ -97,9 +97,8 @@ const struct Node* AST::copyNode(
   return nullptr;
 }
 
-std::variant<
-    std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>,
-    error::parser::unexpected_token>
+std::variant<std::pair<Node*, std::vector<tokenizer::Token*>::const_iterator>,
+             error::parser::unexpected_token>
 primary(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
   logger::Logger::dispatchLog(logger::debugLog{
       "Checking for primary token at " +
@@ -164,7 +163,7 @@ primary(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
     }
 
     const auto groupedExpr = std::get<
-        std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>>(
+        std::pair<Node*, std::vector<tokenizer::Token*>::const_iterator>>(
         groupingResult);
     if (groupedExpr.second < ast->tokens.end()) {
       if ((*groupedExpr.second)->type != util::symbols::RBRACE) {
@@ -188,9 +187,8 @@ primary(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
       ", found " + (*tokenPtr)->lexeme};
 }
 
-std::variant<
-    std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>,
-    error::parser::unexpected_token>
+std::variant<std::pair<Node*, std::vector<tokenizer::Token*>::const_iterator>,
+             error::parser::unexpected_token>
 negation(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
   logger::Logger::dispatchLog(logger::debugLog{
       "Checking for negation at " +
@@ -208,7 +206,7 @@ negation(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
     }
 
     const auto negationExpr = std::get<
-        std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>>(
+        std::pair<Node*, std::vector<tokenizer::Token*>::const_iterator>>(
         negationResult);
     const auto operatorStruct =
         new UnaryOperator{*tokenPtr, negationExpr.first};
@@ -219,9 +217,8 @@ negation(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
   return primary(tokenPtr, ast);
 }
 
-std::variant<
-    std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>,
-    error::parser::unexpected_token>
+std::variant<std::pair<Node*, std::vector<tokenizer::Token*>::const_iterator>,
+             error::parser::unexpected_token>
 conjunction(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
   logger::Logger::dispatchLog(logger::debugLog{
       "Checking for conjunction at " +
@@ -234,7 +231,7 @@ conjunction(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
   }
 
   const auto negationExpr = std::get<
-      std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>>(
+      std::pair<Node*, std::vector<tokenizer::Token*>::const_iterator>>(
       negationResult);
   auto expr = negationExpr.first;
   tokenPtr = negationExpr.second;
@@ -253,7 +250,7 @@ conjunction(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
     }
 
     const auto rightNegationExpr = std::get<
-        std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>>(
+        std::pair<Node*, std::vector<tokenizer::Token*>::const_iterator>>(
         rightNegationResult);
     const auto operatorStruct =
         new BinaryOperator{*tokenPtr, expr, rightNegationExpr.first};
@@ -264,9 +261,8 @@ conjunction(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
   return std::make_pair(expr, tokenPtr);
 }
 
-std::variant<
-    std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>,
-    error::parser::unexpected_token>
+std::variant<std::pair<Node*, std::vector<tokenizer::Token*>::const_iterator>,
+             error::parser::unexpected_token>
 disjunction(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
   logger::Logger::dispatchLog(logger::debugLog{
       "Checking for disjunction at " +
@@ -280,7 +276,7 @@ disjunction(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
   }
 
   const auto conjunctionExpr = std::get<
-      std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>>(
+      std::pair<Node*, std::vector<tokenizer::Token*>::const_iterator>>(
       conjunctionResult);
   auto expr = conjunctionExpr.first;
   tokenPtr = conjunctionExpr.second;
@@ -299,7 +295,7 @@ disjunction(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
     }
 
     const auto rightConjunctionExpr = std::get<
-        std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>>(
+        std::pair<Node*, std::vector<tokenizer::Token*>::const_iterator>>(
         rightConjunctionResult);
     const auto operatorStruct =
         new BinaryOperator{*tokenPtr, expr, rightConjunctionExpr.first};
@@ -310,9 +306,8 @@ disjunction(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
   return std::make_pair(expr, tokenPtr);
 }
 
-std::variant<
-    std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>,
-    error::parser::unexpected_token>
+std::variant<std::pair<Node*, std::vector<tokenizer::Token*>::const_iterator>,
+             error::parser::unexpected_token>
 implication(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
   logger::Logger::dispatchLog(logger::debugLog{
       "Checking for implication at " +
@@ -326,7 +321,7 @@ implication(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
   }
 
   const auto disjunctionExpr = std::get<
-      std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>>(
+      std::pair<Node*, std::vector<tokenizer::Token*>::const_iterator>>(
       disjunctionResult);
   auto expr = disjunctionExpr.first;
   tokenPtr = disjunctionExpr.second;
@@ -345,7 +340,7 @@ implication(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
       return implicationError;
     }
     const auto implicationExpr = std::get<
-        std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>>(
+        std::pair<Node*, std::vector<tokenizer::Token*>::const_iterator>>(
         implicationResult);
     const auto operatorStruct =
         new BinaryOperator{*op, disjunctionExpr.first, implicationExpr.first};
@@ -356,9 +351,8 @@ implication(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
   return std::make_pair(expr, tokenPtr);
 }
 
-std::variant<
-    std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>,
-    error::parser::unexpected_token>
+std::variant<std::pair<Node*, std::vector<tokenizer::Token*>::const_iterator>,
+             error::parser::unexpected_token>
 expression(std::vector<tokenizer::Token*>::const_iterator tokenPtr, AST* ast) {
   logger::Logger::dispatchLog(logger::debugLog{
       "Checking for expression at " +
@@ -454,7 +448,7 @@ std::variant<AST*, error::parser::unexpected_token> parseAST(
   }
 
   const auto expr = std::get<
-      std::pair<const Node*, std::vector<tokenizer::Token*>::const_iterator>>(
+      std::pair<Node*, std::vector<tokenizer::Token*>::const_iterator>>(
       exprResult);
 
   if (expr.second != ast->tokens.end()) {

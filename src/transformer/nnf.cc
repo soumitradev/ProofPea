@@ -29,7 +29,40 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
       const auto childNode = std::get<parser::parser::Absolute*>(child->node);
       logger::Logger::dispatchLog(
           logger::debugLog{"Identified child ABSOLUTE node " +
-                           childNode->token->lexeme + ", ignoring"});
+                           childNode->token->lexeme + ", inverting"});
+      if (childNode->token->type == util::symbols::SymbolType::ABSOLUTETRUE) {
+        childNode->token->type = util::symbols::SymbolType::ABSOLUTEFALSE;
+        childNode->token->lexeme = "0";
+      } else if (childNode->token->type ==
+                 util::symbols::SymbolType::ABSOLUTEFALSE) {
+        childNode->token->type = util::symbols::SymbolType::ABSOLUTETRUE;
+        childNode->token->lexeme = "1";
+      } else {
+        return error::eval::unexpected_node{
+            "Encountered unexpected ABSOLUTE child node" +
+            childNode->token->lexeme + " in transformToNNFRecursive"};
+      }
+
+      if (node->parent == nullptr) {
+        ast->root = child;
+      } else {
+        if (node->parent->type == parser::parser::NodeType::BINARY) {
+          const auto parent =
+              std::get<parser::parser::BinaryOperator*>(node->parent->node);
+          if (parent->left == node) parent->left = child;
+          if (parent->right == node) parent->right = child;
+        } else if (node->parent->type == parser::parser::NodeType::UNARY) {
+          const auto parent =
+              std::get<parser::parser::UnaryOperator*>(node->parent->node);
+          if (parent->child == node) parent->child = child;
+        } else {
+          return error::eval::unexpected_node{
+              "Encountered unexpected parent node of " +
+              parserNode->op->lexeme + " in transformToNNFRecursive"};
+        }
+      }
+      delete parserNode;
+      delete node;
       return true;
     } else if (child->type == parser::parser::NodeType::ATOM) {
       const auto childNode = std::get<parser::parser::Atom*>(child->node);

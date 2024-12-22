@@ -4,8 +4,6 @@
 #include <error/eval.h>
 #include <parser/parser.h>
 
-#include <unordered_set>
-
 namespace transformer {
 namespace impl_free {
 

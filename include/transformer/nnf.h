@@ -3,9 +3,8 @@
 
 #include <error/eval.h>
 #include <parser/parser.h>
+#include <transformer/common.h>
 #include <transformer/impl_free.h>
-
-#include <unordered_set>
 
 namespace transformer {
 namespace nnf {

@@ -80,6 +80,7 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
       const auto grandchild = childNode->child;
       if (node->parent == nullptr) {
         ast->root = grandchild;
+        ast->root->parent = nullptr;
       } else {
         if (node->parent->type == parser::parser::NodeType::BINARY) {
           const auto parent =
@@ -100,7 +101,7 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
       delete node;
       delete childNode;
       delete child;
-      return true;
+      return transformToNNFRecursive(grandchild, ast);
     } else if (child->type == parser::parser::NodeType::BINARY) {
       auto childNode = std::get<parser::parser::BinaryOperator*>(child->node);
       logger::Logger::dispatchLog(

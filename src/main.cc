@@ -56,8 +56,8 @@ int main() {
   const auto copyCopySyntaxTree = parser::parser::AST::copy(copySyntaxTree);
   parser::parser::deallocAST(syntaxTree);
 
-  debug::ast::printAST(copySyntaxTree, false);
-  debug::ast::printAST(copyCopySyntaxTree, false);
+  debug::ast::printAST(copySyntaxTree, false, (char*)"ast.svg");
+  debug::ast::printAST(copyCopySyntaxTree, false, (char*)"ast.svg");
 
   const auto truthTableResult =
       truth_table::tabulator::printTruthTable(copySyntaxTree);
@@ -92,7 +92,7 @@ int main() {
 
   parser::parser::deallocAST(copySyntaxTree);
 
-  debug::ast::printAST(copyCopySyntaxTree, false);
+  debug::ast::printAST(copyCopySyntaxTree, false, (char*)"ast.svg");
   const auto cnfTransformResult =
       transformer::cnf::transformToCNF(copyCopySyntaxTree);
 
@@ -111,7 +111,7 @@ int main() {
     }
   }
 
-  debug::ast::printAST(copyCopySyntaxTree, false);
+  debug::ast::printAST(copyCopySyntaxTree, false, (char*)"ast.svg");
 
   const auto copyTruthTableCNFResult =
       truth_table::tabulator::printTruthTable(copyCopySyntaxTree);

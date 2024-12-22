@@ -3,21 +3,20 @@
 namespace debug {
 namespace ast {
 
-GVC_t *graphvizInit() {
+GVC_t *graphvizInit(char *filepath) {
   // TODO: Track errors in this function
   logger::Logger::dispatchLog(logger::debugLog{"Creating graphviz context"});
   GVC_t *ctx = gvContext();
-  const char *astFilename = "ast.svg";
 
   // Create the AST output file
   logger::Logger::dispatchLog(logger::debugLog{"Creating AST svg output file"});
-  std::ofstream astFile(astFilename);
+  std::ofstream astFile(filepath);
   astFile.close();
 
   // Pass args to graphviz
   logger::Logger::dispatchLog(
-      logger::debugLog{"Configuring the graphviz context"});
-  const char *args[] = {"dot", "-Tsvg", "-o", (char *)astFilename};
+      logger::infoLog{"Configuring the graphviz context"});
+  const char *args[] = {"dot", "-Tsvg", "-o", filepath};
   gvParseArgs(ctx, 4, (char **)args);
 
   logger::Logger::dispatchLog(
@@ -148,9 +147,10 @@ void renderASTRecursive(const Agraph_t *graph, const parser::parser::Node *node,
   }
 }
 
-void printAST(const parser::parser::AST *ast, bool renderParentEdge) {
+void printAST(const parser::parser::AST *ast, bool renderParentEdge,
+              char *filepath) {
   // TODO: Track errors in this function
-  const auto ctx = graphvizInit();
+  const auto ctx = graphvizInit(filepath);
 
   logger::Logger::dispatchLog(logger::infoLog{"Starting the AST render"});
   Agraph_t *astGraph = agopen((char *)"g", Agdirected, 0);

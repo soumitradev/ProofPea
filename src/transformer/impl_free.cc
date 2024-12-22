@@ -4,7 +4,7 @@ namespace transformer {
 namespace impl_free {
 
 std::variant<bool, error::eval::unexpected_node> transformToIMPLFREERecursive(
-    parser::parser::Node* node) {
+    parser::parser::Node* node, parser::parser::AST* ast) {
   if (node->type == parser::parser::NodeType::ABSOLUTE) {
     const auto parserNode = std::get<parser::parser::Absolute*>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{"Identified ABSOLUTE node " +
@@ -23,7 +23,7 @@ std::variant<bool, error::eval::unexpected_node> transformToIMPLFREERecursive(
     logger::Logger::dispatchLog(
         logger::debugLog{"Identified UNARY node " + parserNode->op->lexeme +
                          ", checking children for IMPL_FREE"});
-    return transformToIMPLFREERecursive(parserNode->child);
+    return transformToIMPLFREERecursive(parserNode->child, ast);
   } else if (node->type == parser::parser::NodeType::BINARY) {
     const auto parserNode =
         std::get<parser::parser::BinaryOperator*>(node->node);
@@ -38,6 +38,7 @@ std::variant<bool, error::eval::unexpected_node> transformToIMPLFREERecursive(
 
       const auto negationToken =
           new parser::tokenizer::Token{util::symbols::NEG, "~", 0};
+      ast->tokens.push_back(negationToken);
       const auto negationOp =
           new parser::parser::UnaryOperator{negationToken, parserNode->left};
       const auto negationNode =
@@ -49,7 +50,7 @@ std::variant<bool, error::eval::unexpected_node> transformToIMPLFREERecursive(
         logger::debugLog{"Identified BINARY node " + parserNode->op->lexeme +
                          ", checking children for IMPL_FREE"});
     const auto leftTransformResult =
-        transformToIMPLFREERecursive(parserNode->left);
+        transformToIMPLFREERecursive(parserNode->left, ast);
     if (std::holds_alternative<error::eval::unexpected_node>(
             leftTransformResult)) {
       return std::get<error::eval::unexpected_node>(leftTransformResult);
@@ -58,7 +59,7 @@ std::variant<bool, error::eval::unexpected_node> transformToIMPLFREERecursive(
     }
 
     const auto rightTransformResult =
-        transformToIMPLFREERecursive(parserNode->right);
+        transformToIMPLFREERecursive(parserNode->right, ast);
     if (std::holds_alternative<error::eval::unexpected_node>(
             rightTransformResult)) {
       return std::get<error::eval::unexpected_node>(rightTransformResult);
@@ -85,7 +86,7 @@ std::variant<bool, error::eval::unexpected_node> transformToIMPLFREE(
     parser::parser::AST* ast) {
   logger::Logger::dispatchLog(logger::debugLog{
       "Calling recursive function to start IMPL_FREE transformation"});
-  const auto transformResult = transformToIMPLFREERecursive(ast->root);
+  const auto transformResult = transformToIMPLFREERecursive(ast->root, ast);
 
   if (std::holds_alternative<error::eval::unexpected_node>(transformResult)) {
     return std::get<error::eval::unexpected_node>(transformResult);

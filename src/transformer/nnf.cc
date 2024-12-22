@@ -63,7 +63,9 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
               parserNode->op->lexeme + " in transformToNNFRecursive"};
         }
       }
+      delete parserNode;
       delete node;
+      delete childNode;
       delete child;
       return true;
     } else if (child->type == parser::parser::NodeType::BINARY) {
@@ -74,6 +76,7 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
 
       const auto leftNegationToken =
           new parser::tokenizer::Token{util::symbols::NEG, "~", 0};
+      ast->tokens.push_back(leftNegationToken);
       const auto leftNegationOp =
           new parser::parser::UnaryOperator{leftNegationToken, childNode->left};
       const auto leftNegationNode = new parser::parser::Node{
@@ -82,6 +85,7 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
 
       const auto rightNegationToken =
           new parser::tokenizer::Token{util::symbols::NEG, "~", 0};
+      ast->tokens.push_back(rightNegationToken);
       const auto rightNegationOp = new parser::parser::UnaryOperator{
           rightNegationToken, childNode->right};
       const auto rightNegationNode = new parser::parser::Node{
@@ -122,6 +126,7 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
               parserNode->op->lexeme + " in transformToNNFRecursive"};
         }
       }
+      delete parserNode;
       delete node;
 
       logger::Logger::dispatchLog(logger::debugLog{

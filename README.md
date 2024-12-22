@@ -6,7 +6,7 @@ A tool for performing some helpful operations on propositional logic formulae. T
 - [x] Ensure the parser can handle associativity rules to handle formulae that aren't guaranteed to be well-bracketed
 - [x] Construct a truth table for a given propositional logic formula
 - [x] Convert propositional logic formulae to Negation Normal Form (NNF)
-- [ ] Convert propositional logic formulae to Conjunctive Normal Form (CNF), a.k.a. Product of Sums (PoS) form
+- [x] Convert propositional logic formulae to Conjunctive Normal Form (CNF), a.k.a. Product of Sums (PoS) form
 - [ ] Check if a propositional logic formula is valid or not by converting it to CNF first
 - [ ] Check if a propositional logic formula is in Horn form
 - [ ] Check if a Horn formula is satisfiable or not

@@ -97,13 +97,13 @@ int main() {
       transformer::cnf::transformToCNF(copyCopySyntaxTree);
 
   if (std::holds_alternative<error::eval::unexpected_node>(
-          nnfTransformResult)) {
+          cnfTransformResult)) {
     const auto error =
-        std::get<error::eval::unexpected_node>(nnfTransformResult);
+        std::get<error::eval::unexpected_node>(cnfTransformResult);
     logger::Logger::dispatchLog(logger::errorLog{error : error});
     return 1;
-  } else if (std::holds_alternative<bool>(nnfTransformResult)) {
-    if (!std::get<bool>(nnfTransformResult)) {
+  } else if (std::holds_alternative<bool>(cnfTransformResult)) {
+    if (!std::get<bool>(cnfTransformResult)) {
       logger::Logger::dispatchLog(logger::errorLog{
         error : error::unknown::unknown_error{
             "Encountered unexpected error in transformToIMPLFREE"}
@@ -113,19 +113,19 @@ int main() {
 
   debug::ast::printAST(copyCopySyntaxTree, false);
 
-  const auto copyTruthTableNNFResult =
+  const auto copyTruthTableCNFResult =
       truth_table::tabulator::printTruthTable(copyCopySyntaxTree);
   if (std::holds_alternative<error::eval::unexpected_node>(
-          copyTruthTableNNFResult)) {
+          copyTruthTableCNFResult)) {
     const auto error =
-        std::get<error::eval::unexpected_node>(copyTruthTableNNFResult);
+        std::get<error::eval::unexpected_node>(copyTruthTableCNFResult);
     logger::Logger::dispatchLog(logger::errorLog{error : error});
     return 1;
   }
   if (std::holds_alternative<error::eval::mismatched_atoms>(
-          copyTruthTableNNFResult)) {
+          copyTruthTableCNFResult)) {
     const auto error =
-        std::get<error::eval::mismatched_atoms>(copyTruthTableNNFResult);
+        std::get<error::eval::mismatched_atoms>(copyTruthTableCNFResult);
     logger::Logger::dispatchLog(logger::errorLog{error : error});
     return 1;
   }

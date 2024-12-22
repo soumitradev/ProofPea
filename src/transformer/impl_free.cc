@@ -32,11 +32,9 @@ std::variant<bool, error::eval::unexpected_node> transformToIMPLFREERecursive(
     if (parserNode->op->type == util::symbols::IMPL) {
       logger::Logger::dispatchLog(
           logger::debugLog{"BINARY node " + parserNode->op->lexeme +
-                           "is IMPL node, replacing for IMPL_FREE"});
-      const auto newToken =
-          new parser::tokenizer::Token{util::symbols::DISJUNCT, "+", 0};
-      delete parserNode->op;
-      parserNode->op = newToken;
+                           " is IMPL node, replacing for IMPL_FREE"});
+      parserNode->op->type = util::symbols::DISJUNCT;
+      parserNode->op->lexeme = "+";
 
       const auto negationToken =
           new parser::tokenizer::Token{util::symbols::NEG, "~", 0};

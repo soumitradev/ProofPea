@@ -9,7 +9,7 @@ A tool for performing some helpful operations on propositional logic formulae. T
 - [x] Convert propositional logic formulae to Conjunctive Normal Form (CNF), a.k.a. Product of Sums (PoS) form
 - [x] Check if a propositional logic formula is valid or not by converting it to CNF first
 - [x] Check if a propositional logic formula is in Horn form
-- [ ] Check if a Horn formula is satisfiable or not
+- [x] Check if a Horn formula is satisfiable or not
 - [ ] Check the equivalence of two given formulae
 - [ ] Check the validity of a given sequent
 - [ ] Run performance tests on each of the modules, and try and optimize them as much as possible

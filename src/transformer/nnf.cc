@@ -121,6 +121,7 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
               parserNode->op->lexeme + " in transformToNNFRecursive"};
         }
       }
+      grandchild->parent = node->parent;
       delete parserNode;
       delete node;
       delete childNode;

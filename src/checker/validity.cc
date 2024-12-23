@@ -29,35 +29,6 @@ std::variant<bool, error::eval::unexpected_node> checkEquality(
       util::symbols::SymbolTypeArray[node1->type] + " in checkEquality"};
 }
 
-void splitAST(parser::parser::Node* node, util::symbols::SymbolType separator,
-              std::vector<parser::parser::AST*>& result) {
-  if (node->type == parser::parser::NodeType::BINARY) {
-    const auto binaryOp = std::get<parser::parser::BinaryOperator*>(node->node);
-    if (binaryOp->op->type == separator) {
-      splitAST(binaryOp->left, separator, result);
-      splitAST(binaryOp->right, separator, result);
-      return;
-    }
-  }
-
-  const auto tempAST = new parser::parser::AST{};
-  tempAST->root = node;
-  const auto parent = tempAST->root->parent;
-  tempAST->root->parent = nullptr;
-
-  const auto newAST = parser::parser::AST::copy(tempAST);
-  // No need to use the deallocAST function because this AST was not created
-  // like a normal AST. It is only a shell, and we only need to get rid of the
-  // shell. The insides are the original nodes passed to this function.
-  delete tempAST;
-
-  newAST->root->parent = nullptr;
-  node->parent = parent;
-
-  result.push_back(newAST);
-  return;
-}
-
 std::variant<bool, error::eval::unexpected_node, error::unknown::unknown_error>
 checkValidity(parser::parser::AST* ast) {
   const auto copyAST = parser::parser::AST::copy(ast);
@@ -72,15 +43,15 @@ checkValidity(parser::parser::AST* ast) {
     }
   }
 
-  debug::ast::printAST(copyAST, false, (char*)"ast.svg");
-
   std::vector<parser::parser::AST*> conjuncts;
-  splitAST(copyAST->root, util::symbols::SymbolType::CONJUNCT, conjuncts);
+  common::splitAST(copyAST->root, util::symbols::SymbolType::CONJUNCT,
+                   conjuncts);
   parser::parser::deallocAST(copyAST);
 
   for (size_t i = 0; i < conjuncts.size(); i++) {
     std::vector<parser::parser::AST*> literals;
-    splitAST(conjuncts[i]->root, util::symbols::SymbolType::DISJUNCT, literals);
+    common::splitAST(conjuncts[i]->root, util::symbols::SymbolType::DISJUNCT,
+                     literals);
     parser::parser::deallocAST(conjuncts[i]);
     std::vector<parser::parser::AST*> invertedLiterals(literals.size());
 

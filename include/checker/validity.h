@@ -1,7 +1,7 @@
 #ifndef CNF_CONVERTOR_VALIDITY_CHECKER
 #define CNF_CONVERTOR_VALIDITY_CHECKER
 
-#include <debug/ast.h>
+#include <checker/common.h>
 #include <error/eval.h>
 #include <error/unknown.h>
 #include <parser/parser.h>

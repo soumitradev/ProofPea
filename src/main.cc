@@ -115,7 +115,7 @@ int main() {
     logger::Logger::dispatchLog(logger::errorLog{error : error});
   }
 
-  // debug::ast::printAST(copyCopySyntaxTree, false, (char*)"ast.svg");
+  debug::ast::printAST(copyCopySyntaxTree, false, (char*)"ast.svg");
 
   const auto copyTruthTableCNFResult =
       truth_table::tabulator::printTruthTable(copyCopySyntaxTree);
@@ -133,6 +133,13 @@ int main() {
     logger::Logger::dispatchLog(logger::errorLog{error : error});
     return 1;
   }
+
+  const auto hornClauseCheck =
+      checker::horn::checkHornFormula(copyCopySyntaxTree);
+  std::ostringstream log;
+  log << "The given formula is " << (hornClauseCheck ? "" : "NOT ")
+      << "a horn formula";
+  logger::Logger::dispatchLog(logger::infoLog{log.str()});
 
   parser::parser::deallocAST(copyCopySyntaxTree);
   logger::Logger::freeLogger();

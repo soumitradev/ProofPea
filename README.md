@@ -8,7 +8,7 @@ A tool for performing some helpful operations on propositional logic formulae. T
 - [x] Convert propositional logic formulae to Negation Normal Form (NNF)
 - [x] Convert propositional logic formulae to Conjunctive Normal Form (CNF), a.k.a. Product of Sums (PoS) form
 - [x] Check if a propositional logic formula is valid or not by converting it to CNF first
-- [ ] Check if a propositional logic formula is in Horn form
+- [x] Check if a propositional logic formula is in Horn form
 - [ ] Check if a Horn formula is satisfiable or not
 - [ ] (Not sure if this is even possible, but I think it is) Given a valid sequent, construct a proof for it (maybe not optimal, just a proof)
 - [ ] Check the validity of a given sequent

@@ -135,11 +135,20 @@ int main() {
   }
 
   const auto hornClauseCheck =
-      checker::horn::checkHornFormula(copyCopySyntaxTree);
-  std::ostringstream log;
-  log << "The given formula is " << (hornClauseCheck ? "" : "NOT ")
-      << "a horn formula";
-  logger::Logger::dispatchLog(logger::infoLog{log.str()});
+      checker::horn_satisfiability::checkHornSatisfiability(copyCopySyntaxTree);
+  if (std::holds_alternative<error::horn::invalid_horn_formula>(
+          hornClauseCheck)) {
+    const auto error =
+        std::get<error::horn::invalid_horn_formula>(hornClauseCheck);
+    logger::Logger::dispatchLog(logger::errorLog{error : error});
+    return 1;
+  } else if (std::holds_alternative<bool>(hornClauseCheck)) {
+    const auto satisfiable = std::get<bool>(hornClauseCheck);
+    std::ostringstream log;
+    log << "The given formula is " << (satisfiable ? "" : "NOT ")
+        << "satisfiable";
+    logger::Logger::dispatchLog(logger::infoLog{log.str()});
+  }
 
   parser::parser::deallocAST(copyCopySyntaxTree);
   logger::Logger::freeLogger();

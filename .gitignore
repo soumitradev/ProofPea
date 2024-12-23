@@ -39,4 +39,4 @@ build
 
 logs
 
-ast.svg
+ast*.svg

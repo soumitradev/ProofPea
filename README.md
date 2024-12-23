@@ -10,11 +10,12 @@ A tool for performing some helpful operations on propositional logic formulae. T
 - [x] Check if a propositional logic formula is valid or not by converting it to CNF first
 - [x] Check if a propositional logic formula is in Horn form
 - [ ] Check if a Horn formula is satisfiable or not
-- [ ] (Not sure if this is even possible, but I think it is) Given a valid sequent, construct a proof for it (maybe not optimal, just a proof)
+- [ ] Check the equivalence of two given formulae
 - [ ] Check the validity of a given sequent
+- [ ] Run performance tests on each of the modules, and try and optimize them as much as possible
+- [ ] (Not sure if this is even possible, but I think it is) Given a valid sequent, construct a proof for it (maybe not optimal, just a proof)
 - [ ] [Optional] Make a SAT solver
 - [ ] [Optional] Optimize the proof constructor by using Proof Search, similar to a kind of Prolog
-- [ ] Run performance tests on each of the modules, and try and optimize them as much as possible
 
 ## Usage
 

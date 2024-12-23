@@ -14,7 +14,7 @@ generateStates(std::map<std::vector<bool>, bool>& table,
     std::vector<bool> atomState(atomNodes.size());
     std::ostringstream stateString;
     stateString << "[";
-    for (int i = 0; i < atomState.size(); i++) {
+    for (size_t i = 0; i < atomState.size(); i++) {
       atomState[i] = state[atomNodes[i]];
       const auto node = std::get<parser::parser::Atom*>(atomNodes[i]->node);
       stateString << node->token->lexeme << ": " << (atomState[i] ? "1" : "0")
@@ -86,7 +86,7 @@ constructTruthTable(std::map<std::vector<bool>, bool>& table,
   std::vector<std::string> atomStrings(atoms.size());
   std::vector<const parser::parser::Node*> atomNodes(atoms.size());
   std::unordered_map<const parser::parser::Node*, bool> state;
-  for (int i = 0; i < atoms.size(); i++) {
+  for (size_t i = 0; i < atoms.size(); i++) {
     atomStrings[i] = atoms[i].first;
     atomNodes[i] = atoms[i].second;
     state[atoms[i].second] = false;

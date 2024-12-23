@@ -236,17 +236,6 @@ std::variant<bool, error::eval::unexpected_node> transformToCNF(
       return false;
     }
   }
-  logger::Logger::dispatchLog(logger::debugLog{
-      "Finished CNF transformer, rebuilding AST token vector"});
-  parser::parser::rebuildTokens(ast);
-  logger::Logger::dispatchLog(logger::debugLog{
-      "Finished rebuilding AST token vector, rebuilding AST maps"});
-  const auto rebuildResult = common::rebuildASTMaps(ast);
-  if (std::holds_alternative<error::eval::unexpected_node>(rebuildResult)) {
-    return std::get<error::eval::unexpected_node>(rebuildResult);
-  } else if (std::holds_alternative<bool>(rebuildResult)) {
-    if (!std::get<bool>(rebuildResult)) return false;
-  }
   return true;
 }
 

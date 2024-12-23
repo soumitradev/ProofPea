@@ -101,9 +101,6 @@ std::variant<bool, error::eval::unexpected_node> transformToIMPLFREE(
     return false;
   }
 
-  logger::Logger::dispatchLog(logger::debugLog{
-      "Finished IMPL_FREE transformation, rebuilding AST token vector"});
-  parser::parser::rebuildTokens(ast);
   return true;
 }
 

@@ -94,7 +94,7 @@ int main() {
 
   debug::ast::printAST(copyCopySyntaxTree, false, (char*)"ast.svg");
   const auto cnfTransformResult =
-      transformer::cnf::transformToCNF(copyCopySyntaxTree);
+      checker::validity::checkValidity(copyCopySyntaxTree);
 
   if (std::holds_alternative<error::eval::unexpected_node>(
           cnfTransformResult)) {
@@ -103,15 +103,19 @@ int main() {
     logger::Logger::dispatchLog(logger::errorLog{error : error});
     return 1;
   } else if (std::holds_alternative<bool>(cnfTransformResult)) {
-    if (!std::get<bool>(cnfTransformResult)) {
-      logger::Logger::dispatchLog(logger::errorLog{
-        error : error::unknown::unknown_error{
-            "Encountered unexpected error in transformToIMPLFREE"}
-      });
-    }
+    const auto valid = std::get<bool>(cnfTransformResult);
+
+    std::ostringstream log;
+    log << "The given formula is " << (valid ? "" : "NOT ") << "valid";
+    logger::Logger::dispatchLog(logger::infoLog{log.str()});
+  } else if (std::holds_alternative<error::eval::unexpected_node>(
+                 cnfTransformResult)) {
+    const auto error =
+        std::get<error::eval::unexpected_node>(cnfTransformResult);
+    logger::Logger::dispatchLog(logger::errorLog{error : error});
   }
 
-  debug::ast::printAST(copyCopySyntaxTree, false, (char*)"ast.svg");
+  // debug::ast::printAST(copyCopySyntaxTree, false, (char*)"ast.svg");
 
   const auto copyTruthTableCNFResult =
       truth_table::tabulator::printTruthTable(copyCopySyntaxTree);

@@ -134,22 +134,105 @@ int main() {
     return 1;
   }
 
-  const auto hornClauseCheck =
-      checker::horn_satisfiability::checkHornSatisfiability(copyCopySyntaxTree);
-  if (std::holds_alternative<error::horn::invalid_horn_formula>(
-          hornClauseCheck)) {
+  // const auto hornClauseCheck =
+  //     checker::horn_satisfiability::checkHornSatisfiability(copyCopySyntaxTree);
+  // if (std::holds_alternative<error::horn::invalid_horn_formula>(
+  //         hornClauseCheck)) {
+  //   const auto error =
+  //       std::get<error::horn::invalid_horn_formula>(hornClauseCheck);
+  //   logger::Logger::dispatchLog(logger::errorLog{error : error});
+  //   return 1;
+  // } else if (std::holds_alternative<bool>(hornClauseCheck)) {
+  //   const auto satisfiable = std::get<bool>(hornClauseCheck);
+  //   std::ostringstream log;
+  //   log << "The given formula is " << (satisfiable ? "" : "NOT ")
+  //       << "satisfiable";
+  //   logger::Logger::dispatchLog(logger::infoLog{log.str()});
+  // }
+
+  std::string formula2;
+  std::cout << "Enter your other well formed formula" << std::endl;
+
+  std::getline(std::cin, formula2);
+
+  logger::Logger::dispatchLog(
+      logger::infoLog{log : "User entered formula: " + formula2});
+
+  std::vector<parser::tokenizer::Token*> tokens2;
+  auto tokenizerResult2 = parser::tokenizer::tokenize(formula2, tokens2);
+  if (std::holds_alternative<error::tokenizer::invalid_symbol>(
+          tokenizerResult2)) {
     const auto error =
-        std::get<error::horn::invalid_horn_formula>(hornClauseCheck);
+        std::get<error::tokenizer::invalid_symbol>(tokenizerResult2);
     logger::Logger::dispatchLog(logger::errorLog{error : error});
-    return 1;
-  } else if (std::holds_alternative<bool>(hornClauseCheck)) {
-    const auto satisfiable = std::get<bool>(hornClauseCheck);
-    std::ostringstream log;
-    log << "The given formula is " << (satisfiable ? "" : "NOT ")
-        << "satisfiable";
-    logger::Logger::dispatchLog(logger::infoLog{log.str()});
+    return 22;
+  } else if (std::holds_alternative<error::unknown::unknown_error>(
+                 tokenizerResult2)) {
+    const auto error =
+        std::get<error::unknown::unknown_error>(tokenizerResult2);
+    logger::Logger::dispatchLog(logger::errorLog{error : error});
+    return 125;
+  } else if (!std::holds_alternative<bool>(tokenizerResult2)) {
+    logger::Logger::dispatchLog(logger::errorLog{
+      error : error::unknown::unknown_error(
+          "Unknown tokens alternative returned by tokenize()")
+    });
+    return 125;
   }
 
+  const auto otherTreeResult = parser::parser::parseAST(tokens2);
+  tokens2.clear();
+  if (std::holds_alternative<error::parser::unexpected_token>(
+          otherTreeResult)) {
+    const auto error =
+        std::get<error::parser::unexpected_token>(otherTreeResult);
+    logger::Logger::dispatchLog(logger::errorLog{error : error});
+    return 1;
+  }
+  const auto otherTree = std::get<parser::parser::AST*>(otherTreeResult);
+
+  const auto equivalenceResult =
+      checker::equivalence::checkEquivalence(copyCopySyntaxTree, otherTree);
+  if (std::holds_alternative<error::eval::unexpected_node>(equivalenceResult)) {
+    const auto error =
+        std::get<error::eval::unexpected_node>(equivalenceResult);
+    logger::Logger::dispatchLog(logger::errorLog{error : error});
+    return 22;
+  } else if (std::holds_alternative<error::eval::mismatched_atoms>(
+                 equivalenceResult)) {
+    const auto error =
+        std::get<error::eval::mismatched_atoms>(equivalenceResult);
+    logger::Logger::dispatchLog(logger::errorLog{error : error});
+    return 22;
+  } else if (std::holds_alternative<
+                 error::equivalence::equivalence_chack_unsupported>(
+                 equivalenceResult)) {
+    const auto error =
+        std::get<error::equivalence::equivalence_chack_unsupported>(
+            equivalenceResult);
+    logger::Logger::dispatchLog(logger::errorLog{error : error});
+    return 22;
+  } else if (std::holds_alternative<error::equivalence::incomplete_truth_table>(
+                 equivalenceResult)) {
+    const auto error =
+        std::get<error::equivalence::incomplete_truth_table>(equivalenceResult);
+    logger::Logger::dispatchLog(logger::errorLog{error : error});
+    return 22;
+  } else if (!std::holds_alternative<bool>(equivalenceResult)) {
+    logger::Logger::dispatchLog(logger::errorLog{
+      error : error::unknown::unknown_error(
+          "Unknown tokens alternative returned by tokenize()")
+    });
+    return 125;
+  }
+  const auto equivalent = std::get<bool>(equivalenceResult);
+
+  std::ostringstream equivalenceLog;
+  equivalenceLog << "The formulae are "
+                 << (equivalent ? "equivalent" : "NOT equivalent");
+  logger::Logger::dispatchLog(logger::infoLog{log : equivalenceLog.str()});
+
+  parser::parser::deallocAST(otherTree);
   parser::parser::deallocAST(copyCopySyntaxTree);
   logger::Logger::freeLogger();
   return 0;

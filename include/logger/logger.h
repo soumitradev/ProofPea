@@ -68,7 +68,6 @@ class Logger {
   static void initLogger(Level minimumLogLevel) {
     if (instance == nullptr) {
       instance = std::make_unique<Logger>(minimumLogLevel);
-      // instance.reset(new Logger(minimumLogLevel));
     }
   }
 
@@ -76,7 +75,6 @@ class Logger {
                          Level minimumLogLevel) {
     if (instance == nullptr) {
       instance = std::make_unique<Logger>(output, logFile, minimumLogLevel);
-      // instance.reset(new Logger(output, logFile, minimumLogLevel));
     }
   }
 

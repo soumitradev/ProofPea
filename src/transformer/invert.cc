@@ -16,7 +16,6 @@ std::variant<bool, error::eval::unexpected_node> invertTree(
                                                       ast->root));
   ast->root->parent = negationNode;
   ast->root = negationNode;
-  // TODO: Deal with this
   ast->root->parent.reset();
 
   const auto transformResult = transformer::cnf::transformToCNF(ast);

@@ -13,7 +13,7 @@ int main() {
   logger::Logger::dispatchLog(
       logger::infoLog{log : "User entered formula: " + formula});
 
-  std::vector<parser::tokenizer::Token*> tokens;
+  std::vector<parser::tokenizer::Token> tokens;
   auto tokenizerResult = parser::tokenizer::tokenize(formula, tokens);
   if (std::holds_alternative<error::tokenizer::invalid_symbol>(
           tokenizerResult)) {
@@ -36,12 +36,13 @@ int main() {
 
   std::ostringstream lexemes;
   for (size_t i = 0; i < tokens.size(); i++) {
-    lexemes << tokens[i]->lexeme << "\t";
+    lexemes << tokens[i].lexeme << "\t";
   }
   logger::Logger::dispatchLog(
       logger::infoLog{log : "Tokens detected: " + lexemes.str()});
 
-  const auto syntaxTreeResult = parser::parser::parseAST(tokens);
+  const auto syntaxTree = new parser::parser::AST();
+  const auto syntaxTreeResult = syntaxTree->parseAST(tokens);
   tokens.clear();
   if (std::holds_alternative<error::parser::unexpected_token>(
           syntaxTreeResult)) {
@@ -50,7 +51,7 @@ int main() {
     logger::Logger::dispatchLog(logger::errorLog{error : error});
     return 1;
   }
-  const auto syntaxTree = std::get<parser::parser::AST*>(syntaxTreeResult);
+
   const auto copySyntaxTree = parser::parser::AST::copy(syntaxTree);
   const auto copyCopySyntaxTree = parser::parser::AST::copy(copySyntaxTree);
   parser::parser::deallocAST(syntaxTree);
@@ -157,7 +158,7 @@ int main() {
   logger::Logger::dispatchLog(
       logger::infoLog{log : "User entered formula: " + formula2});
 
-  std::vector<parser::tokenizer::Token*> tokens2;
+  std::vector<parser::tokenizer::Token> tokens2;
   auto tokenizerResult2 = parser::tokenizer::tokenize(formula2, tokens2);
   if (std::holds_alternative<error::tokenizer::invalid_symbol>(
           tokenizerResult2)) {
@@ -179,7 +180,8 @@ int main() {
     return 125;
   }
 
-  const auto otherTreeResult = parser::parser::parseAST(tokens2);
+  const auto otherTree = new parser::parser::AST();
+  const auto otherTreeResult = otherTree->parseAST(tokens2);
   tokens2.clear();
   if (std::holds_alternative<error::parser::unexpected_token>(
           otherTreeResult)) {
@@ -188,7 +190,6 @@ int main() {
     logger::Logger::dispatchLog(logger::errorLog{error : error});
     return 1;
   }
-  const auto otherTree = std::get<parser::parser::AST*>(otherTreeResult);
 
   const auto equivalenceResult =
       checker::equivalence::checkEquivalence(copyCopySyntaxTree, otherTree);

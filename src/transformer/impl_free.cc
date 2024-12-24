@@ -36,8 +36,8 @@ std::variant<bool, error::eval::unexpected_node> transformToIMPLFREERecursive(
       parserNode->op->type = util::symbols::DISJUNCT;
       parserNode->op->lexeme = "+";
 
-      const auto negationToken =
-          new parser::tokenizer::Token{util::symbols::NEG, "~", 0};
+      const auto negationToken = std::make_shared<parser::tokenizer::Token>(
+          util::symbols::NEG, "~", 0);
       ast->tokens.push_back(negationToken);
       const auto negationOp =
           new parser::parser::UnaryOperator{negationToken, parserNode->left};

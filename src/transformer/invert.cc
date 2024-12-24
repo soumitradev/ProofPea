@@ -8,7 +8,7 @@ std::variant<bool, error::eval::unexpected_node> invertTree(
   logger::Logger::dispatchLog(logger::debugLog{"Adding negation to top of "});
 
   const auto negationToken =
-      new parser::tokenizer::Token{util::symbols::NEG, "~", 0};
+      std::make_shared<parser::tokenizer::Token>(util::symbols::NEG, "~", 0);
   ast->tokens.push_back(negationToken);
   const auto negationOp =
       new parser::parser::UnaryOperator{negationToken, ast->root};

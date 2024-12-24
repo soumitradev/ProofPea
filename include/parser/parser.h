@@ -15,20 +15,20 @@ namespace parser {
 enum NodeType { UNARY, BINARY, ATOM, ABSOLUTE };
 
 struct Absolute {
-  tokenizer::Token *token;
+  std::shared_ptr<tokenizer::Token> token;
 };
 
 struct Atom {
-  tokenizer::Token *token;
+  std::shared_ptr<tokenizer::Token> token;
 };
 
 struct UnaryOperator {
-  tokenizer::Token *op;
+  std::shared_ptr<tokenizer::Token> op;
   struct Node *child;
 };
 
 struct BinaryOperator {
-  tokenizer::Token *op;
+  std::shared_ptr<tokenizer::Token> op;
   struct Node *left;
   struct Node *right;
 };
@@ -40,27 +40,43 @@ struct Node {
 };
 
 struct AST {
+ private:
+  std::vector<tokenizer::Token> *constructionTokens;
+
+ public:
   struct Node *root;
-  std::vector<tokenizer::Token *> tokens;
+  std::vector<std::shared_ptr<tokenizer::Token>> tokens;
   std::unordered_map<std::string, Node *> atoms;
   std::unordered_map<std::string, Node *> absolutes;
   AST() { this->root = nullptr; }
-  AST(const std::vector<tokenizer::Token *> &tokens) {
-    this->tokens = std::vector<tokenizer::Token *>(tokens);
-  }
 
   static struct AST *copy(struct AST *ast);
   static struct Node *copyNode(
-      struct Node *node, std::vector<tokenizer::Token *> &tokens,
+      struct Node *node, std::vector<std::shared_ptr<tokenizer::Token>> &tokens,
       std::unordered_map<std::string, Node *> &atoms,
       std::unordered_map<std::string, Node *> &absolutes);
-};
 
-std::variant<std::pair<Node *, std::vector<tokenizer::Token *>::const_iterator>,
-             error::parser::unexpected_token>
-expression(std::vector<tokenizer::Token *>::const_iterator tokenPtr, AST *ast);
-std::variant<AST *, error::parser::unexpected_token> parseAST(
-    const std::vector<tokenizer::Token *> &tokens);
+  std::variant<std::pair<Node *, std::vector<tokenizer::Token>::const_iterator>,
+               error::parser::unexpected_token>
+  primary(std::vector<tokenizer::Token>::const_iterator tokenPtr);
+  std::variant<std::pair<Node *, std::vector<tokenizer::Token>::const_iterator>,
+               error::parser::unexpected_token>
+  negation(std::vector<tokenizer::Token>::const_iterator tokenPtr);
+  std::variant<std::pair<Node *, std::vector<tokenizer::Token>::const_iterator>,
+               error::parser::unexpected_token>
+  conjunction(std::vector<tokenizer::Token>::const_iterator tokenPtr);
+  std::variant<std::pair<Node *, std::vector<tokenizer::Token>::const_iterator>,
+               error::parser::unexpected_token>
+  disjunction(std::vector<tokenizer::Token>::const_iterator tokenPtr);
+  std::variant<std::pair<Node *, std::vector<tokenizer::Token>::const_iterator>,
+               error::parser::unexpected_token>
+  implication(std::vector<tokenizer::Token>::const_iterator tokenPtr);
+  std::variant<std::pair<Node *, std::vector<tokenizer::Token>::const_iterator>,
+               error::parser::unexpected_token>
+  expression(std::vector<tokenizer::Token>::const_iterator tokenPtr);
+  std::variant<bool, error::parser::unexpected_token> parseAST(
+      std::vector<tokenizer::Token> &tokens);
+};
 
 void deallocAST(AST *ast);
 void rebuildTokens(AST *ast);

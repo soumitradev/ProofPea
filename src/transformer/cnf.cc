@@ -29,8 +29,8 @@ bool distributivityTransform(parser::parser::Node* node,
       rightCopy->parent = nodeOp->left;
       leftNode->right = rightCopy;
 
-      const auto newRightToken =
-          new parser::tokenizer::Token{util::symbols::DISJUNCT, "+", 0};
+      const auto newRightToken = std::make_shared<parser::tokenizer::Token>(
+          util::symbols::DISJUNCT, "+", 0);
       const auto newRightOp = new parser::parser::BinaryOperator{
           newRightToken, leftRightChild, nodeOp->right};
       const auto newRightNode =
@@ -73,8 +73,8 @@ bool distributivityTransform(parser::parser::Node* node,
       leftCopy->parent = nodeOp->right;
       rightNode->left = leftCopy;
 
-      const auto newLeftToken =
-          new parser::tokenizer::Token{util::symbols::DISJUNCT, "+", 0};
+      const auto newLeftToken = std::make_shared<parser::tokenizer::Token>(
+          util::symbols::DISJUNCT, "+", 0);
       ast->tokens.push_back(newLeftToken);
       const auto newLeftOp = new parser::parser::BinaryOperator{
           newLeftToken, rightLeftChild, nodeOp->left};

@@ -36,8 +36,8 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
         if (existing != ast->absolutes.end()) {
           invertedNode = existing->second;
         } else {
-          const auto invertedToken = new parser::tokenizer::Token{
-              util::symbols::SymbolType::ABSOLUTEFALSE, "0", 0};
+          const auto invertedToken = std::make_shared<parser::tokenizer::Token>(
+              util::symbols::SymbolType::ABSOLUTEFALSE, "0", 0);
           ast->tokens.push_back(invertedToken);
           const auto invertedAbsolute =
               new parser::parser::Absolute{invertedToken};
@@ -51,8 +51,8 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
         if (existing != ast->absolutes.end()) {
           invertedNode = existing->second;
         } else {
-          const auto invertedToken = new parser::tokenizer::Token{
-              util::symbols::SymbolType::ABSOLUTETRUE, "1", 0};
+          const auto invertedToken = std::make_shared<parser::tokenizer::Token>(
+              util::symbols::SymbolType::ABSOLUTETRUE, "1", 0);
           ast->tokens.push_back(invertedToken);
           const auto invertedAbsolute =
               new parser::parser::Absolute{invertedToken};
@@ -133,8 +133,8 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
           logger::debugLog{"Identified child BINARY node " +
                            childNode->op->lexeme + ", reducing"});
 
-      const auto leftNegationToken =
-          new parser::tokenizer::Token{util::symbols::NEG, "~", 0};
+      const auto leftNegationToken = std::make_shared<parser::tokenizer::Token>(
+          util::symbols::NEG, "~", 0);
       ast->tokens.push_back(leftNegationToken);
       const auto leftNegationOp =
           new parser::parser::UnaryOperator{leftNegationToken, childNode->left};
@@ -143,7 +143,8 @@ std::variant<bool, error::eval::unexpected_node> transformToNNFRecursive(
       childNode->left->parent = leftNegationNode;
 
       const auto rightNegationToken =
-          new parser::tokenizer::Token{util::symbols::NEG, "~", 0};
+          std::make_shared<parser::tokenizer::Token>(util::symbols::NEG, "~",
+                                                     0);
       ast->tokens.push_back(rightNegationToken);
       const auto rightNegationOp = new parser::parser::UnaryOperator{
           rightNegationToken, childNode->right};

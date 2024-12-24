@@ -93,17 +93,6 @@ populatePartialTruthTable(
   return true;
 }
 
-// std::variant<bool, error::eval::unexpected_node,
-// error::eval::mismatched_atoms> populateTruthTable(
-//     std::map<std::vector<bool>, bool>& table, parser::parser::AST* ast,
-//     std::vector<const parser::parser::Node*>& atomNodes,
-//     std::vector<const parser::parser::Node*>::const_iterator atomPtr,
-//     std::unordered_map<const parser::parser::Node*, bool>& state) {
-//   const auto skipped = std::set<const parser::parser::Node*>();
-//   return populatePartialTruthTable(table, ast, atomNodes, skipped, atomPtr,
-//                                    state);
-// }
-
 std::variant<std::vector<std::string>, error::eval::unexpected_node,
              error::eval::mismatched_atoms>
 constructPartialTruthTable(

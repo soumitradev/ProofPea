@@ -462,45 +462,5 @@ std::variant<bool, error::parser::unexpected_token> AST::parseAST(
   return true;
 }
 
-// void deallocNodeRecursive(
-//     const std::shared_ptr<Node> root,
-//     std::unordered_set<const std::shared_ptr<Node>>& deletedAtoms) {
-//   if (root->type == parser::ATOM) {
-//     auto ptr = std::get<parser::Atom*>(root->node);
-//     delete ptr;
-//   } else if (root->type == parser::ABSOLUTE) {
-//     auto ptr = std::get<parser::Absolute*>(root->node);
-//     delete ptr;
-//   } else if (root->type == parser::BINARY) {
-//     auto ptr = std::get<parser::BinaryOperator*>(root->node);
-//     if (deletedAtoms.find(ptr->left) == deletedAtoms.end()) {
-//       deallocNodeRecursive(ptr->left, deletedAtoms);
-//       deletedAtoms.insert(ptr->left);
-//     }
-//     if (deletedAtoms.find(ptr->right) == deletedAtoms.end()) {
-//       deallocNodeRecursive(ptr->right, deletedAtoms);
-//       deletedAtoms.insert(ptr->right);
-//     }
-//     delete ptr;
-//   } else if (root->type == parser::UNARY) {
-//     auto ptr = std::get<parser::UnaryOperator*>(root->node);
-//     if (deletedAtoms.find(ptr->child) == deletedAtoms.end()) {
-//       deallocNodeRecursive(ptr->child, deletedAtoms);
-//       deletedAtoms.insert(ptr->child);
-//     }
-//     delete ptr;
-//   }
-//   delete root;
-// }
-
-// void deallocAST(AST* ast) {
-//   std::unordered_set<const std::shared_ptr<Node>> deletedAtoms;
-//   deletedAtoms.clear();
-//   deallocNodeRecursive(ast->root, deletedAtoms);
-//   deletedAtoms.clear();
-//   ast->atoms.clear();
-//   ast->absolutes.clear();
-//   delete ast;
-// }
 }  // namespace parser
 }  // namespace parser

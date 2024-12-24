@@ -11,8 +11,9 @@
 namespace checker {
 namespace common {
 
-void splitAST(parser::parser::Node* node, util::symbols::SymbolType separator,
-              std::vector<parser::parser::AST*>& result);
+void splitAST(const parser::parser::Node* node,
+              const util::symbols::SymbolType separator,
+              std::vector<std::shared_ptr<parser::parser::AST>>& result);
 
 }  // namespace common
 }  // namespace checker

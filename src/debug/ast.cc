@@ -43,8 +43,9 @@ void graphvizClose(GVC_t *ctx, Agraph_t *graph) {
       logger::infoLog{"graphviz has been uninitialized successfully"});
 }
 
-Agnode_t *renderNode(Agraph_t *graph, void *nodePtr, const std::string lexeme,
-                     parser::parser::NodeType type) {
+Agnode_t *renderNode(Agraph_t *graph, const void *nodePtr,
+                     const std::string lexeme,
+                     const parser::parser::NodeType type) {
   // TODO: Track errors in this function
   char *name = nullptr;
 
@@ -80,49 +81,52 @@ Agnode_t *renderNode(Agraph_t *graph, void *nodePtr, const std::string lexeme,
   return renderedNode;
 }
 
-void renderASTRecursive(const Agraph_t *graph, const parser::parser::Node *node,
-                        const Agnode_t *parent, bool isLeftChild,
-                        bool renderParentEdge) {
+void renderASTRecursive(const Agraph_t *graph,
+                        const std::shared_ptr<parser::parser::Node> node,
+                        const Agnode_t *parent, const bool isLeftChild,
+                        const bool renderParentEdge) {
   // TODO: Track errors in this function
   Agnode_t *renderedNode = nullptr;
   if (node->type == parser::parser::UNARY) {
     const auto unaryOperatorNode =
-        std::get<parser::parser::UnaryOperator *>(node->node);
+        std::get<std::shared_ptr<parser::parser::UnaryOperator>>(node->node);
 
     logger::Logger::dispatchLog(logger::debugLog{
         "Rendering unary operator \"" + unaryOperatorNode->op->lexeme +
         "\" at position " + std::to_string(unaryOperatorNode->op->position)});
-    renderedNode = renderNode((Agraph_t *)graph, (void *)node,
+    renderedNode = renderNode((Agraph_t *)graph, (void *)node.get(),
                               unaryOperatorNode->op->lexeme, node->type);
     renderASTRecursive(graph, unaryOperatorNode->child, renderedNode, false,
                        renderParentEdge);
   } else if (node->type == parser::parser::BINARY) {
     const auto binaryOperatorNode =
-        std::get<parser::parser::BinaryOperator *>(node->node);
+        std::get<std::shared_ptr<parser::parser::BinaryOperator>>(node->node);
 
     logger::Logger::dispatchLog(logger::debugLog{
         "Rendering binary operator \"" + binaryOperatorNode->op->lexeme +
         "\" at position " + std::to_string(binaryOperatorNode->op->position)});
 
-    renderedNode = renderNode((Agraph_t *)graph, (void *)node,
+    renderedNode = renderNode((Agraph_t *)graph, (void *)node.get(),
                               binaryOperatorNode->op->lexeme, node->type);
     renderASTRecursive(graph, binaryOperatorNode->left, renderedNode, true,
                        renderParentEdge);
     renderASTRecursive(graph, binaryOperatorNode->right, renderedNode, false,
                        renderParentEdge);
   } else if (node->type == parser::parser::ATOM) {
-    const auto atomNode = std::get<parser::parser::Atom *>(node->node);
+    const auto atomNode =
+        std::get<std::shared_ptr<parser::parser::Atom>>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{
         "Rendering atom \"" + atomNode->token->lexeme + "\" at position " +
         std::to_string(atomNode->token->position)});
-    renderedNode = renderNode((Agraph_t *)graph, (void *)node,
+    renderedNode = renderNode((Agraph_t *)graph, (void *)node.get(),
                               atomNode->token->lexeme, node->type);
   } else if (node->type == parser::parser::ABSOLUTE) {
-    const auto absoluteNode = std::get<parser::parser::Absolute *>(node->node);
+    const auto absoluteNode =
+        std::get<std::shared_ptr<parser::parser::Absolute>>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{
         "Rendering absolute \"" + absoluteNode->token->lexeme +
         "\" at position " + std::to_string(absoluteNode->token->position)});
-    renderedNode = renderNode((Agraph_t *)graph, (void *)node,
+    renderedNode = renderNode((Agraph_t *)graph, (void *)node.get(),
                               absoluteNode->token->lexeme, node->type);
   }
 
@@ -147,7 +151,7 @@ void renderASTRecursive(const Agraph_t *graph, const parser::parser::Node *node,
   }
 }
 
-void printAST(const parser::parser::AST *ast, bool renderParentEdge,
+void printAST(const parser::parser::AST *ast, const bool renderParentEdge,
               char *filepath) {
   // TODO: Track errors in this function
   const auto ctx = graphvizInit(filepath);

@@ -12,7 +12,7 @@ namespace checker {
 namespace horn_satisfiability {
 
 std::variant<bool, error::horn::invalid_horn_formula> checkHornSatisfiability(
-    parser::parser::AST* ast);
+    const parser::parser::AST* ast);
 
 }  // namespace horn_satisfiability
 }  // namespace checker

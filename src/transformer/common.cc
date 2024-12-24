@@ -4,9 +4,11 @@ namespace transformer {
 namespace common {
 
 std::variant<bool, error::eval::unexpected_node> rebuildASTMapsRecursive(
-    parser::parser::Node* node, parser::parser::AST* ast) {
+    const std::shared_ptr<parser::parser::Node> node,
+    std::shared_ptr<parser::parser::AST> ast) {
   if (node->type == parser::parser::NodeType::ABSOLUTE) {
-    const auto parserNode = std::get<parser::parser::Absolute*>(node->node);
+    const auto parserNode =
+        std::get<std::shared_ptr<parser::parser::Absolute>>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{"Identified ABSOLUTE node " +
                                                  parserNode->token->lexeme +
                                                  ", adding to map"});
@@ -16,7 +18,8 @@ std::variant<bool, error::eval::unexpected_node> rebuildASTMapsRecursive(
     }
     return true;
   } else if (node->type == parser::parser::NodeType::ATOM) {
-    const auto parserNode = std::get<parser::parser::Atom*>(node->node);
+    const auto parserNode =
+        std::get<std::shared_ptr<parser::parser::Atom>>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{"Identified ATOM node " +
                                                  parserNode->token->lexeme +
                                                  ", adding to map"});
@@ -27,14 +30,14 @@ std::variant<bool, error::eval::unexpected_node> rebuildASTMapsRecursive(
     return true;
   } else if (node->type == parser::parser::NodeType::UNARY) {
     const auto parserNode =
-        std::get<parser::parser::UnaryOperator*>(node->node);
+        std::get<std::shared_ptr<parser::parser::UnaryOperator>>(node->node);
     logger::Logger::dispatchLog(
         logger::debugLog{"Identified UNARY node " + parserNode->op->lexeme +
                          ", calling rebuild AST maps on child"});
     return rebuildASTMapsRecursive(parserNode->child, ast);
   } else if (node->type == parser::parser::NodeType::BINARY) {
     const auto parserNode =
-        std::get<parser::parser::BinaryOperator*>(node->node);
+        std::get<std::shared_ptr<parser::parser::BinaryOperator>>(node->node);
     logger::Logger::dispatchLog(
         logger::debugLog{"Identified BINARY node " + parserNode->op->lexeme +
                          ", calling rebuild AST maps on children"});
@@ -69,7 +72,7 @@ std::variant<bool, error::eval::unexpected_node> rebuildASTMapsRecursive(
 }
 
 std::variant<bool, error::eval::unexpected_node> rebuildASTMaps(
-    parser::parser::AST* ast) {
+    std::shared_ptr<parser::parser::AST> ast) {
   logger::Logger::dispatchLog(logger::debugLog{"Clearing old maps"});
   ast->absolutes.clear();
   ast->atoms.clear();

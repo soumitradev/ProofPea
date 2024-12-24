@@ -4,29 +4,32 @@ namespace transformer {
 namespace impl_free {
 
 std::variant<bool, error::eval::unexpected_node> transformToIMPLFREERecursive(
-    parser::parser::Node* node, parser::parser::AST* ast) {
+    const std::shared_ptr<parser::parser::Node> node,
+    std::shared_ptr<parser::parser::AST> ast) {
   if (node->type == parser::parser::NodeType::ABSOLUTE) {
-    const auto parserNode = std::get<parser::parser::Absolute*>(node->node);
+    const auto parserNode =
+        std::get<std::shared_ptr<parser::parser::Absolute>>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{"Identified ABSOLUTE node " +
                                                  parserNode->token->lexeme +
                                                  ", ignoring for IMPL_FREE"});
     return true;
   } else if (node->type == parser::parser::NodeType::ATOM) {
-    const auto parserNode = std::get<parser::parser::Atom*>(node->node);
+    const auto parserNode =
+        std::get<std::shared_ptr<parser::parser::Atom>>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{"Identified ATOM node " +
                                                  parserNode->token->lexeme +
                                                  ", ignoring for IMPL_FREE"});
     return true;
   } else if (node->type == parser::parser::NodeType::UNARY) {
     const auto parserNode =
-        std::get<parser::parser::UnaryOperator*>(node->node);
+        std::get<std::shared_ptr<parser::parser::UnaryOperator>>(node->node);
     logger::Logger::dispatchLog(
         logger::debugLog{"Identified UNARY node " + parserNode->op->lexeme +
                          ", checking children for IMPL_FREE"});
     return transformToIMPLFREERecursive(parserNode->child, ast);
   } else if (node->type == parser::parser::NodeType::BINARY) {
     const auto parserNode =
-        std::get<parser::parser::BinaryOperator*>(node->node);
+        std::get<std::shared_ptr<parser::parser::BinaryOperator>>(node->node);
     // If the binary operator is IMPL, swap out the token and add a negation
     // node on the left child
     if (parserNode->op->type == util::symbols::IMPL) {
@@ -39,10 +42,10 @@ std::variant<bool, error::eval::unexpected_node> transformToIMPLFREERecursive(
       const auto negationToken = std::make_shared<parser::tokenizer::Token>(
           util::symbols::NEG, "~", 0);
       ast->tokens.push_back(negationToken);
-      const auto negationOp =
-          new parser::parser::UnaryOperator{negationToken, parserNode->left};
-      const auto negationNode =
-          new parser::parser::Node{parser::parser::UNARY, node, negationOp};
+      const auto negationNode = std::make_shared<parser::parser::Node>(
+          parser::parser::UNARY, node,
+          std::make_shared<parser::parser::UnaryOperator>(negationToken,
+                                                             parserNode->left));
       parserNode->left->parent = negationNode;
       parserNode->left = negationNode;
     }
@@ -83,7 +86,7 @@ std::variant<bool, error::eval::unexpected_node> transformToIMPLFREERecursive(
 }
 
 std::variant<bool, error::eval::unexpected_node> transformToIMPLFREE(
-    parser::parser::AST* ast) {
+    std::shared_ptr<parser::parser::AST> ast) {
   logger::Logger::dispatchLog(logger::debugLog{
       "Calling recursive function to start IMPL_FREE transformation"});
   const auto transformResult = transformToIMPLFREERecursive(ast->root, ast);

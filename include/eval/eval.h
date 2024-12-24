@@ -8,8 +8,10 @@
 
 namespace eval {
 std::variant<bool, error::eval::unexpected_node, error::eval::mismatched_atoms>
-evaluateState(parser::parser::AST* ast,
-              std::unordered_map<const parser::parser::Node*, bool> state);
+evaluateState(
+    const parser::parser::AST* ast,
+    const std::unordered_map<std::shared_ptr<parser::parser::Node>, bool>
+        state);
 }  // namespace eval
 
 #endif  // CNF_CONVERTOR_EVAL

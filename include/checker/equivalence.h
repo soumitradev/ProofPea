@@ -16,7 +16,8 @@ namespace equivalence {
 std::variant<bool, error::eval::unexpected_node, error::eval::mismatched_atoms,
              error::equivalence::equivalence_chack_unsupported,
              error::equivalence::incomplete_truth_table>
-checkEquivalence(parser::parser::AST* ast1, parser::parser::AST* ast2);
+checkEquivalence(const parser::parser::AST* ast1,
+                 const parser::parser::AST* ast2);
 
 }  // namespace equivalence
 }  // namespace checker

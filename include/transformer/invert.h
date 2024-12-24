@@ -10,7 +10,7 @@ namespace transformer {
 namespace invert {
 
 std::variant<bool, error::eval::unexpected_node> invertTree(
-    parser::parser::AST* ast);
+    std::shared_ptr<parser::parser::AST> ast);
 
 }  // namespace invert
 }  // namespace transformer

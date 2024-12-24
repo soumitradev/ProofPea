@@ -4,7 +4,7 @@ namespace checker {
 namespace equivalence {
 
 std::vector<bool> encodeState(unsigned long long data,
-                              unsigned long long size) {
+                              const unsigned long long size) {
   std::vector<bool> state(size, false);
   int i = size - 1;
   while (data > 0) {
@@ -16,9 +16,9 @@ std::vector<bool> encodeState(unsigned long long data,
 }
 
 std::variant<bool, error::equivalence::incomplete_truth_table> checkDependence(
-    std::map<std::vector<bool>, bool>& table, std::string atom,
-    std::vector<std::string>& atoms,
-    std::vector<std::string>::iterator atomPtr) {
+    std::map<std::vector<bool>, bool>& table,
+    const std::vector<std::string>& atoms,
+    const std::vector<std::string>::iterator atomPtr) {
   // Implicitly assumes that atom does indeed exist in table, because atomPtr
   // points to a location inside atoms
   const auto order = atoms.end() - atomPtr - 1L;
@@ -47,14 +47,14 @@ std::variant<bool, error::equivalence::incomplete_truth_table> checkDependence(
   return false;
 }
 
-bool checkTautology(std::map<std::vector<bool>, bool>& table) {
+bool checkTautology(const std::map<std::vector<bool>, bool>& table) {
   for (auto&& entry : table) {
     if (entry.second != true) return false;
   }
   return true;
 }
 
-bool checkFallacy(std::map<std::vector<bool>, bool>& table) {
+bool checkFallacy(const std::map<std::vector<bool>, bool>& table) {
   for (auto&& entry : table) {
     if (entry.second != false) return false;
   }
@@ -64,7 +64,8 @@ bool checkFallacy(std::map<std::vector<bool>, bool>& table) {
 std::variant<bool, error::eval::unexpected_node, error::eval::mismatched_atoms,
              error::equivalence::equivalence_chack_unsupported,
              error::equivalence::incomplete_truth_table>
-checkEquivalence(parser::parser::AST* ast1, parser::parser::AST* ast2) {
+checkEquivalence(const parser::parser::AST* ast1,
+                 const parser::parser::AST* ast2) {
   if (ast1->atoms.size() > 32 || ast2->atoms.size() > 32) {
     return error::equivalence::equivalence_chack_unsupported{
         "Equivalence check unsupported for formulae with more than 32 unique "
@@ -131,7 +132,7 @@ checkEquivalence(parser::parser::AST* ast1, parser::parser::AST* ast2) {
   for (auto&& i : differingAtoms1) {
     const auto atomPtr1 = std::find(atoms1.begin(), atoms1.end(), i);
     if (atomPtr1 != atoms1.end()) {
-      const auto dependence1 = checkDependence(table1, i, atoms1, atomPtr1);
+      const auto dependence1 = checkDependence(table1, atoms1, atomPtr1);
       if (std::holds_alternative<error::equivalence::incomplete_truth_table>(
               dependence1)) {
         return std::get<error::equivalence::incomplete_truth_table>(
@@ -147,7 +148,7 @@ checkEquivalence(parser::parser::AST* ast1, parser::parser::AST* ast2) {
   for (auto&& i : differingAtoms2) {
     const auto atomPtr2 = std::find(atoms2.begin(), atoms2.end(), i);
     if (atomPtr2 != atoms2.end()) {
-      const auto dependence2 = checkDependence(table2, i, atoms2, atomPtr2);
+      const auto dependence2 = checkDependence(table2, atoms2, atomPtr2);
       if (std::holds_alternative<error::equivalence::incomplete_truth_table>(
               dependence2)) {
         return std::get<error::equivalence::incomplete_truth_table>(
@@ -161,8 +162,8 @@ checkEquivalence(parser::parser::AST* ast1, parser::parser::AST* ast2) {
     }
   }
 
-  std::set<const parser::parser::Node*> skippedNodes1;
-  std::set<const parser::parser::Node*> skippedNodes2;
+  std::set<std::shared_ptr<parser::parser::Node>> skippedNodes1;
+  std::set<std::shared_ptr<parser::parser::Node>> skippedNodes2;
   for (auto&& i : differingAtoms1) {
     const auto node = ast1->atoms.find(i);
     if (node == ast1->atoms.end()) {

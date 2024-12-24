@@ -9,7 +9,7 @@
 namespace checker {
 namespace horn {
 
-bool checkHornFormula(parser::parser::AST* ast);
+bool checkHornFormula(const parser::parser::AST* ast);
 
 }  // namespace horn
 }  // namespace checker

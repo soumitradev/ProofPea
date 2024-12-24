@@ -3,25 +3,27 @@
 namespace parser {
 namespace parser {
 
-struct AST* AST::copy(struct AST* ast) {
+std::shared_ptr<AST> AST::copy(const struct AST* ast) {
   logger::Logger::dispatchLog(logger::infoLog{"Copying AST"});
-  auto copy = new AST{};
+  const auto copy = std::make_shared<AST>();
   copy->absolutes.clear();
   copy->atoms.clear();
   copy->tokens.clear();
 
   copy->absolutes.reserve(ast->absolutes.size());
   copy->atoms.reserve(ast->atoms.size());
-  copy->root = copyNode(ast->root, copy->tokens, copy->atoms, copy->absolutes);
+  copy->root =
+      copyNode(ast->root.get(), copy->tokens, copy->atoms, copy->absolutes);
   return copy;
 }
 
-struct Node* AST::copyNode(
-    struct Node* node, std::vector<std::shared_ptr<tokenizer::Token>>& tokens,
-    std::unordered_map<std::string, Node*>& atoms,
-    std::unordered_map<std::string, Node*>& absolutes) {
+std::shared_ptr<Node> AST::copyNode(
+    const struct Node* node,
+    std::vector<std::shared_ptr<tokenizer::Token>>& tokens,
+    std::unordered_map<std::string, std::shared_ptr<Node>>& atoms,
+    std::unordered_map<std::string, std::shared_ptr<Node>>& absolutes) {
   if (node->type == NodeType::ABSOLUTE) {
-    const auto parserNode = std::get<Absolute*>(node->node);
+    const auto parserNode = std::get<std::shared_ptr<Absolute>>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{"Identified ABSOLUTE node " +
                                                  parserNode->token->lexeme +
                                                  ", checking if node has "
@@ -34,8 +36,9 @@ struct Node* AST::copyNode(
 
       tokens.push_back(
           std::make_shared<tokenizer::Token>(*(parserNode->token)));
-      const auto newNode = new Absolute{tokens.back()};
-      const auto copyNode = new Node{node->type, nullptr, newNode};
+      const auto newNode = std::make_shared<Absolute>(tokens.back());
+      const auto copyNode = std::make_shared<Node>(
+          node->type, std::weak_ptr<parser::Node>(), newNode);
       absolutes[parserNode->token->lexeme] = copyNode;
       return copyNode;
     }
@@ -43,7 +46,7 @@ struct Node* AST::copyNode(
         "Found ABSOLUTE node " + parserNode->token->lexeme + ", returning"});
     return existing->second;
   } else if (node->type == NodeType::ATOM) {
-    const auto parserNode = std::get<Atom*>(node->node);
+    const auto parserNode = std::get<std::shared_ptr<Atom>>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{"Identified ATOM node " +
                                                  parserNode->token->lexeme +
                                                  ", checking if node has "
@@ -54,8 +57,9 @@ struct Node* AST::copyNode(
           "Did not find ATOM node " + parserNode->token->lexeme + ", copying"});
       tokens.push_back(
           std::make_shared<tokenizer::Token>(*(parserNode->token)));
-      const auto newNode = new Atom{tokens.back()};
-      const auto copyNode = new Node{node->type, nullptr, newNode};
+      const auto newNode = std::make_shared<Atom>(tokens.back());
+      const auto copyNode = std::make_shared<Node>(
+          node->type, std::weak_ptr<parser::Node>(), newNode);
       atoms[parserNode->token->lexeme] = copyNode;
       return copyNode;
     }
@@ -63,19 +67,24 @@ struct Node* AST::copyNode(
         "Found ATOM node " + parserNode->token->lexeme + ", returning"});
     return existing->second;
   } else if (node->type == NodeType::UNARY) {
-    const auto parserNode = std::get<UnaryOperator*>(node->node);
+    const auto parserNode =
+        std::get<std::shared_ptr<UnaryOperator>>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{
         "Identified UNARY node " + parserNode->op->lexeme + ", copying"});
     tokens.push_back(std::make_shared<tokenizer::Token>(*(parserNode->op)));
     const auto newTokenPtr = tokens.back();
     logger::Logger::dispatchLog(logger::debugLog{
         "Copying child node for UNARY node " + parserNode->op->lexeme});
-    const auto newChild = copyNode(parserNode->child, tokens, atoms, absolutes);
-    const auto newNode = new UnaryOperator{newTokenPtr, newChild};
-    newChild->parent = new Node{node->type, nullptr, newNode};
-    return newChild->parent;
+    const auto newChild =
+        copyNode(parserNode->child.get(), tokens, atoms, absolutes);
+    const auto newOp = std::make_shared<UnaryOperator>(newTokenPtr, newChild);
+    const auto newNode = std::make_shared<Node>(
+        node->type, std::weak_ptr<parser::Node>(), newOp);
+    newChild->parent = newNode;
+    return newNode;
   } else if (node->type == NodeType::BINARY) {
-    const auto parserNode = std::get<BinaryOperator*>(node->node);
+    const auto parserNode =
+        std::get<std::shared_ptr<BinaryOperator>>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{
         "Identified BINARY node " + parserNode->op->lexeme + ", copying"});
     tokens.push_back(std::make_shared<tokenizer::Token>(*(parserNode->op)));
@@ -83,15 +92,16 @@ struct Node* AST::copyNode(
     logger::Logger::dispatchLog(logger::debugLog{
         "Copying left child node for BINARY node " + parserNode->op->lexeme});
     const auto newLeftChild =
-        copyNode(parserNode->left, tokens, atoms, absolutes);
+        copyNode(parserNode->left.get(), tokens, atoms, absolutes);
     logger::Logger::dispatchLog(logger::debugLog{
         "Copying right child node for BINARY node " + parserNode->op->lexeme});
     const auto newRightChild =
-        copyNode(parserNode->right, tokens, atoms, absolutes);
-    const auto newOp =
-        new BinaryOperator{newTokenPtr, newLeftChild, newRightChild};
+        copyNode(parserNode->right.get(), tokens, atoms, absolutes);
 
-    const auto newNode = new Node{node->type, nullptr, newOp};
+    const auto newOp = std::make_shared<BinaryOperator>(
+        newTokenPtr, newLeftChild, newRightChild);
+    const auto newNode = std::make_shared<Node>(
+        node->type, std::weak_ptr<parser::Node>(), newOp);
     newLeftChild->parent = newNode;
     newRightChild->parent = newNode;
     return newNode;
@@ -104,9 +114,10 @@ struct Node* AST::copyNode(
   return nullptr;
 }
 
-std::variant<std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>,
+std::variant<std::pair<std::shared_ptr<Node>,
+                       std::vector<tokenizer::Token>::const_iterator>,
              error::parser::unexpected_token>
-AST::primary(std::vector<tokenizer::Token>::const_iterator tokenPtr) {
+AST::primary(const std::vector<tokenizer::Token>::const_iterator tokenPtr) {
   logger::Logger::dispatchLog(
       logger::debugLog{"Checking for primary token at " +
                        std::to_string(std::distance(
@@ -129,8 +140,10 @@ AST::primary(std::vector<tokenizer::Token>::const_iterator tokenPtr) {
         logger::debugLog{"Did not find atom " + tokenPtr->lexeme +
                          " in hash-map, creating and inserting"});
 
-    const auto atom = new Atom{std::make_shared<tokenizer::Token>(*tokenPtr)};
-    const auto atomNode = new Node{parser::ATOM, nullptr, atom};
+    const auto atom =
+        std::make_shared<Atom>(std::make_shared<tokenizer::Token>(*tokenPtr));
+    const auto atomNode = std::make_shared<Node>(
+        parser::ATOM, std::weak_ptr<parser::Node>(), atom);
     this->atoms[tokenPtr->lexeme] = atomNode;
 
     return std::make_pair(atomNode, tokenPtr + 1);
@@ -152,9 +165,10 @@ AST::primary(std::vector<tokenizer::Token>::const_iterator tokenPtr) {
         logger::debugLog{"Did not find absolute " + tokenPtr->lexeme +
                          " in hash-map, creating and inserting"});
 
-    const auto absolute =
-        new Absolute{std::make_shared<tokenizer::Token>(*tokenPtr)};
-    const auto absoluteNode = new Node{parser::ABSOLUTE, nullptr, absolute};
+    const auto absolute = std::make_shared<Absolute>(
+        std::make_shared<tokenizer::Token>(*tokenPtr));
+    const auto absoluteNode = std::make_shared<Node>(
+        parser::ABSOLUTE, std::weak_ptr<parser::Node>(), absolute);
     this->absolutes[tokenPtr->lexeme] = absoluteNode;
 
     return std::make_pair(absoluteNode, tokenPtr + 1);
@@ -174,9 +188,10 @@ AST::primary(std::vector<tokenizer::Token>::const_iterator tokenPtr) {
       return groupingError;
     }
 
-    const auto groupedExpr = std::get<
-        std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>>(
-        groupingResult);
+    const auto groupedExpr =
+        std::get<std::pair<std::shared_ptr<Node>,
+                           std::vector<tokenizer::Token>::const_iterator>>(
+            groupingResult);
     if (groupedExpr.second < this->constructionTokens->end()) {
       if (groupedExpr.second->type != util::symbols::RBRACE) {
         logger::Logger::dispatchLog(logger::errorLog{error::error{
@@ -200,9 +215,10 @@ AST::primary(std::vector<tokenizer::Token>::const_iterator tokenPtr) {
       ", found " + tokenPtr->lexeme};
 }
 
-std::variant<std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>,
+std::variant<std::pair<std::shared_ptr<Node>,
+                       std::vector<tokenizer::Token>::const_iterator>,
              error::parser::unexpected_token>
-AST::negation(std::vector<tokenizer::Token>::const_iterator tokenPtr) {
+AST::negation(const std::vector<tokenizer::Token>::const_iterator tokenPtr) {
   logger::Logger::dispatchLog(
       logger::debugLog{"Checking for negation at " +
                        std::to_string(std::distance(
@@ -220,12 +236,14 @@ AST::negation(std::vector<tokenizer::Token>::const_iterator tokenPtr) {
       return negationError;
     }
 
-    const auto negationExpr = std::get<
-        std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>>(
-        negationResult);
-    const auto operatorStruct = new UnaryOperator{
-        std::make_shared<tokenizer::Token>(*tokenPtr), negationExpr.first};
-    const auto expr = new Node{parser::UNARY, nullptr, operatorStruct};
+    const auto negationExpr =
+        std::get<std::pair<std::shared_ptr<Node>,
+                           std::vector<tokenizer::Token>::const_iterator>>(
+            negationResult);
+    const auto operatorStruct = std::make_shared<UnaryOperator>(
+        std::make_shared<tokenizer::Token>(*tokenPtr), negationExpr.first);
+    const auto expr = std::make_shared<Node>(
+        parser::UNARY, std::weak_ptr<parser::Node>(), operatorStruct);
     negationExpr.first->parent = expr;
     return std::make_pair(expr, negationExpr.second);
   }
@@ -233,7 +251,8 @@ AST::negation(std::vector<tokenizer::Token>::const_iterator tokenPtr) {
   return primary(tokenPtr);
 }
 
-std::variant<std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>,
+std::variant<std::pair<std::shared_ptr<Node>,
+                       std::vector<tokenizer::Token>::const_iterator>,
              error::parser::unexpected_token>
 AST::conjunction(std::vector<tokenizer::Token>::const_iterator tokenPtr) {
   logger::Logger::dispatchLog(
@@ -248,7 +267,8 @@ AST::conjunction(std::vector<tokenizer::Token>::const_iterator tokenPtr) {
   }
 
   const auto negationExpr =
-      std::get<std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>>(
+      std::get<std::pair<std::shared_ptr<Node>,
+                         std::vector<tokenizer::Token>::const_iterator>>(
           negationResult);
   auto expr = negationExpr.first;
   tokenPtr = negationExpr.second;
@@ -267,13 +287,15 @@ AST::conjunction(std::vector<tokenizer::Token>::const_iterator tokenPtr) {
       return rightNegationResult;
     }
 
-    const auto rightNegationExpr = std::get<
-        std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>>(
-        rightNegationResult);
-    const auto operatorStruct =
-        new BinaryOperator{std::make_shared<tokenizer::Token>(*tokenPtr), expr,
-                           rightNegationExpr.first};
-    const auto newExpr = new Node{parser::BINARY, nullptr, operatorStruct};
+    const auto rightNegationExpr =
+        std::get<std::pair<std::shared_ptr<Node>,
+                           std::vector<tokenizer::Token>::const_iterator>>(
+            rightNegationResult);
+    const auto operatorStruct = std::make_shared<BinaryOperator>(
+        std::make_shared<tokenizer::Token>(*tokenPtr), expr,
+        rightNegationExpr.first);
+    const auto newExpr = std::make_shared<Node>(
+        parser::BINARY, std::weak_ptr<parser::Node>(), operatorStruct);
     expr->parent = newExpr;
     rightNegationExpr.first->parent = newExpr;
     expr = newExpr;
@@ -283,7 +305,8 @@ AST::conjunction(std::vector<tokenizer::Token>::const_iterator tokenPtr) {
   return std::make_pair(expr, tokenPtr);
 }
 
-std::variant<std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>,
+std::variant<std::pair<std::shared_ptr<Node>,
+                       std::vector<tokenizer::Token>::const_iterator>,
              error::parser::unexpected_token>
 AST::disjunction(std::vector<tokenizer::Token>::const_iterator tokenPtr) {
   logger::Logger::dispatchLog(
@@ -299,7 +322,8 @@ AST::disjunction(std::vector<tokenizer::Token>::const_iterator tokenPtr) {
   }
 
   const auto conjunctionExpr =
-      std::get<std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>>(
+      std::get<std::pair<std::shared_ptr<Node>,
+                         std::vector<tokenizer::Token>::const_iterator>>(
           conjunctionResult);
   auto expr = conjunctionExpr.first;
   tokenPtr = conjunctionExpr.second;
@@ -318,13 +342,15 @@ AST::disjunction(std::vector<tokenizer::Token>::const_iterator tokenPtr) {
       return rightConjunctionError;
     }
 
-    const auto rightConjunctionExpr = std::get<
-        std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>>(
-        rightConjunctionResult);
-    const auto operatorStruct =
-        new BinaryOperator{std::make_shared<tokenizer::Token>(*tokenPtr), expr,
-                           rightConjunctionExpr.first};
-    const auto newExpr = new Node{parser::BINARY, nullptr, operatorStruct};
+    const auto rightConjunctionExpr =
+        std::get<std::pair<std::shared_ptr<Node>,
+                           std::vector<tokenizer::Token>::const_iterator>>(
+            rightConjunctionResult);
+    const auto operatorStruct = std::make_shared<BinaryOperator>(
+        std::make_shared<tokenizer::Token>(*tokenPtr), expr,
+        rightConjunctionExpr.first);
+    const auto newExpr = std::make_shared<Node>(
+        parser::BINARY, std::weak_ptr<parser::Node>(), operatorStruct);
     expr->parent = newExpr;
     rightConjunctionExpr.first->parent = newExpr;
     expr = newExpr;
@@ -334,7 +360,8 @@ AST::disjunction(std::vector<tokenizer::Token>::const_iterator tokenPtr) {
   return std::make_pair(expr, tokenPtr);
 }
 
-std::variant<std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>,
+std::variant<std::pair<std::shared_ptr<Node>,
+                       std::vector<tokenizer::Token>::const_iterator>,
              error::parser::unexpected_token>
 AST::implication(std::vector<tokenizer::Token>::const_iterator tokenPtr) {
   logger::Logger::dispatchLog(
@@ -350,7 +377,8 @@ AST::implication(std::vector<tokenizer::Token>::const_iterator tokenPtr) {
   }
 
   const auto disjunctionExpr =
-      std::get<std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>>(
+      std::get<std::pair<std::shared_ptr<Node>,
+                         std::vector<tokenizer::Token>::const_iterator>>(
           disjunctionResult);
   auto expr = disjunctionExpr.first;
   tokenPtr = disjunctionExpr.second;
@@ -369,13 +397,15 @@ AST::implication(std::vector<tokenizer::Token>::const_iterator tokenPtr) {
           std::get<error::parser::unexpected_token>(implicationResult);
       return implicationError;
     }
-    const auto implicationExpr = std::get<
-        std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>>(
-        implicationResult);
-    const auto operatorStruct =
-        new BinaryOperator{std::make_shared<tokenizer::Token>(*op),
-                           disjunctionExpr.first, implicationExpr.first};
-    expr = new Node{parser::BINARY, nullptr, operatorStruct};
+    const auto implicationExpr =
+        std::get<std::pair<std::shared_ptr<Node>,
+                           std::vector<tokenizer::Token>::const_iterator>>(
+            implicationResult);
+    const auto operatorStruct = std::make_shared<BinaryOperator>(
+        std::make_shared<tokenizer::Token>(*op), disjunctionExpr.first,
+        implicationExpr.first);
+    expr = std::make_shared<Node>(parser::BINARY, std::weak_ptr<parser::Node>(),
+                                  operatorStruct);
     disjunctionExpr.first->parent = expr;
     implicationExpr.first->parent = expr;
     tokenPtr = implicationExpr.second;
@@ -384,9 +414,10 @@ AST::implication(std::vector<tokenizer::Token>::const_iterator tokenPtr) {
   return std::make_pair(expr, tokenPtr);
 }
 
-std::variant<std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>,
+std::variant<std::pair<std::shared_ptr<Node>,
+                       std::vector<tokenizer::Token>::const_iterator>,
              error::parser::unexpected_token>
-AST::expression(std::vector<tokenizer::Token>::const_iterator tokenPtr) {
+AST::expression(const std::vector<tokenizer::Token>::const_iterator tokenPtr) {
   logger::Logger::dispatchLog(
       logger::debugLog{"Checking for expression at " +
                        std::to_string(std::distance(
@@ -409,7 +440,8 @@ std::variant<bool, error::parser::unexpected_token> AST::parseAST(
   }
 
   const auto expr =
-      std::get<std::pair<Node*, std::vector<tokenizer::Token>::const_iterator>>(
+      std::get<std::pair<std::shared_ptr<Node>,
+                         std::vector<tokenizer::Token>::const_iterator>>(
           exprResult);
 
   if (expr.second != this->constructionTokens->end()) {
@@ -430,44 +462,45 @@ std::variant<bool, error::parser::unexpected_token> AST::parseAST(
   return true;
 }
 
-void deallocNodeRecursive(const Node* root,
-                          std::unordered_set<const Node*>& deletedAtoms) {
-  if (root->type == parser::ATOM) {
-    auto ptr = std::get<parser::Atom*>(root->node);
-    delete ptr;
-  } else if (root->type == parser::ABSOLUTE) {
-    auto ptr = std::get<parser::Absolute*>(root->node);
-    delete ptr;
-  } else if (root->type == parser::BINARY) {
-    auto ptr = std::get<parser::BinaryOperator*>(root->node);
-    if (deletedAtoms.find(ptr->left) == deletedAtoms.end()) {
-      deallocNodeRecursive(ptr->left, deletedAtoms);
-      deletedAtoms.insert(ptr->left);
-    }
-    if (deletedAtoms.find(ptr->right) == deletedAtoms.end()) {
-      deallocNodeRecursive(ptr->right, deletedAtoms);
-      deletedAtoms.insert(ptr->right);
-    }
-    delete ptr;
-  } else if (root->type == parser::UNARY) {
-    auto ptr = std::get<parser::UnaryOperator*>(root->node);
-    if (deletedAtoms.find(ptr->child) == deletedAtoms.end()) {
-      deallocNodeRecursive(ptr->child, deletedAtoms);
-      deletedAtoms.insert(ptr->child);
-    }
-    delete ptr;
-  }
-  delete root;
-}
+// void deallocNodeRecursive(
+//     const std::shared_ptr<Node> root,
+//     std::unordered_set<const std::shared_ptr<Node>>& deletedAtoms) {
+//   if (root->type == parser::ATOM) {
+//     auto ptr = std::get<parser::Atom*>(root->node);
+//     delete ptr;
+//   } else if (root->type == parser::ABSOLUTE) {
+//     auto ptr = std::get<parser::Absolute*>(root->node);
+//     delete ptr;
+//   } else if (root->type == parser::BINARY) {
+//     auto ptr = std::get<parser::BinaryOperator*>(root->node);
+//     if (deletedAtoms.find(ptr->left) == deletedAtoms.end()) {
+//       deallocNodeRecursive(ptr->left, deletedAtoms);
+//       deletedAtoms.insert(ptr->left);
+//     }
+//     if (deletedAtoms.find(ptr->right) == deletedAtoms.end()) {
+//       deallocNodeRecursive(ptr->right, deletedAtoms);
+//       deletedAtoms.insert(ptr->right);
+//     }
+//     delete ptr;
+//   } else if (root->type == parser::UNARY) {
+//     auto ptr = std::get<parser::UnaryOperator*>(root->node);
+//     if (deletedAtoms.find(ptr->child) == deletedAtoms.end()) {
+//       deallocNodeRecursive(ptr->child, deletedAtoms);
+//       deletedAtoms.insert(ptr->child);
+//     }
+//     delete ptr;
+//   }
+//   delete root;
+// }
 
-void deallocAST(AST* ast) {
-  std::unordered_set<const Node*> deletedAtoms;
-  deletedAtoms.clear();
-  deallocNodeRecursive(ast->root, deletedAtoms);
-  deletedAtoms.clear();
-  ast->atoms.clear();
-  ast->absolutes.clear();
-  delete ast;
-}
+// void deallocAST(AST* ast) {
+//   std::unordered_set<const std::shared_ptr<Node>> deletedAtoms;
+//   deletedAtoms.clear();
+//   deallocNodeRecursive(ast->root, deletedAtoms);
+//   deletedAtoms.clear();
+//   ast->atoms.clear();
+//   ast->absolutes.clear();
+//   delete ast;
+// }
 }  // namespace parser
 }  // namespace parser

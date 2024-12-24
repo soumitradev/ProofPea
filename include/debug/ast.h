@@ -10,7 +10,7 @@
 
 namespace debug {
 namespace ast {
-void printAST(const parser::parser::AST *ast, bool renderParentEdge,
+void printAST(const parser::parser::AST *ast, const bool renderParentEdge,
               char *filepath);
 }  // namespace ast
 }  // namespace debug

@@ -14,72 +14,102 @@ namespace parser {
 
 enum NodeType { UNARY, BINARY, ATOM, ABSOLUTE };
 
+struct Node;
+
 struct Absolute {
   std::shared_ptr<tokenizer::Token> token;
+  Absolute(std::shared_ptr<tokenizer::Token> token) { this->token = token; }
 };
 
 struct Atom {
   std::shared_ptr<tokenizer::Token> token;
+  Atom(std::shared_ptr<tokenizer::Token> token) { this->token = token; }
 };
 
 struct UnaryOperator {
   std::shared_ptr<tokenizer::Token> op;
-  struct Node *child;
+  std::shared_ptr<Node> child;
+  UnaryOperator(std::shared_ptr<tokenizer::Token> op,
+                std::shared_ptr<Node> child) {
+    this->op = op;
+    this->child = child;
+  }
 };
 
 struct BinaryOperator {
   std::shared_ptr<tokenizer::Token> op;
-  struct Node *left;
-  struct Node *right;
+  std::shared_ptr<Node> left;
+  std::shared_ptr<Node> right;
+  BinaryOperator(std::shared_ptr<tokenizer::Token> op,
+                 std::shared_ptr<Node> left, std::shared_ptr<Node> right) {
+    this->op = op;
+    this->left = left;
+    this->right = right;
+  }
 };
 
 struct Node {
   NodeType type;
-  struct Node *parent;
-  std::variant<UnaryOperator *, BinaryOperator *, Atom *, Absolute *> node;
+  std::weak_ptr<Node> parent;
+  std::variant<std::shared_ptr<UnaryOperator>, std::shared_ptr<BinaryOperator>,
+               std::shared_ptr<Atom>, std::shared_ptr<Absolute>>
+      node;
+  Node(NodeType type, std::weak_ptr<Node> parent,
+       std::variant<std::shared_ptr<UnaryOperator>,
+                    std::shared_ptr<BinaryOperator>, std::shared_ptr<Atom>,
+                    std::shared_ptr<Absolute>>
+           node) {
+    this->type = type;
+    this->parent = parent;
+    this->node = node;
+  }
 };
 
 struct AST {
  private:
   std::vector<tokenizer::Token> *constructionTokens;
-
- public:
-  struct Node *root;
-  std::vector<std::shared_ptr<tokenizer::Token>> tokens;
-  std::unordered_map<std::string, Node *> atoms;
-  std::unordered_map<std::string, Node *> absolutes;
-  AST() { this->root = nullptr; }
-
-  static struct AST *copy(struct AST *ast);
-  static struct Node *copyNode(
-      struct Node *node, std::vector<std::shared_ptr<tokenizer::Token>> &tokens,
-      std::unordered_map<std::string, Node *> &atoms,
-      std::unordered_map<std::string, Node *> &absolutes);
-
-  std::variant<std::pair<Node *, std::vector<tokenizer::Token>::const_iterator>,
+  std::variant<std::pair<std::shared_ptr<Node>,
+                         std::vector<tokenizer::Token>::const_iterator>,
                error::parser::unexpected_token>
-  primary(std::vector<tokenizer::Token>::const_iterator tokenPtr);
-  std::variant<std::pair<Node *, std::vector<tokenizer::Token>::const_iterator>,
+  primary(const std::vector<tokenizer::Token>::const_iterator tokenPtr);
+  std::variant<std::pair<std::shared_ptr<Node>,
+                         std::vector<tokenizer::Token>::const_iterator>,
                error::parser::unexpected_token>
-  negation(std::vector<tokenizer::Token>::const_iterator tokenPtr);
-  std::variant<std::pair<Node *, std::vector<tokenizer::Token>::const_iterator>,
+  negation(const std::vector<tokenizer::Token>::const_iterator tokenPtr);
+  std::variant<std::pair<std::shared_ptr<Node>,
+                         std::vector<tokenizer::Token>::const_iterator>,
                error::parser::unexpected_token>
   conjunction(std::vector<tokenizer::Token>::const_iterator tokenPtr);
-  std::variant<std::pair<Node *, std::vector<tokenizer::Token>::const_iterator>,
+  std::variant<std::pair<std::shared_ptr<Node>,
+                         std::vector<tokenizer::Token>::const_iterator>,
                error::parser::unexpected_token>
   disjunction(std::vector<tokenizer::Token>::const_iterator tokenPtr);
-  std::variant<std::pair<Node *, std::vector<tokenizer::Token>::const_iterator>,
+  std::variant<std::pair<std::shared_ptr<Node>,
+                         std::vector<tokenizer::Token>::const_iterator>,
                error::parser::unexpected_token>
   implication(std::vector<tokenizer::Token>::const_iterator tokenPtr);
-  std::variant<std::pair<Node *, std::vector<tokenizer::Token>::const_iterator>,
+  std::variant<std::pair<std::shared_ptr<Node>,
+                         std::vector<tokenizer::Token>::const_iterator>,
                error::parser::unexpected_token>
-  expression(std::vector<tokenizer::Token>::const_iterator tokenPtr);
+  expression(const std::vector<tokenizer::Token>::const_iterator tokenPtr);
+
+ public:
+  std::shared_ptr<Node> root;
+  std::vector<std::shared_ptr<tokenizer::Token>> tokens;
+  std::unordered_map<std::string, std::shared_ptr<Node>> atoms;
+  std::unordered_map<std::string, std::shared_ptr<Node>> absolutes;
+  AST() { this->root = nullptr; }
+
+  static std::shared_ptr<AST> copy(const struct AST *ast);
+  static std::shared_ptr<Node> copyNode(
+      const struct Node *node,
+      std::vector<std::shared_ptr<tokenizer::Token>> &tokens,
+      std::unordered_map<std::string, std::shared_ptr<Node>> &atoms,
+      std::unordered_map<std::string, std::shared_ptr<Node>> &absolutes);
+
   std::variant<bool, error::parser::unexpected_token> parseAST(
       std::vector<tokenizer::Token> &tokens);
 };
-
-void deallocAST(AST *ast);
-void rebuildTokens(AST *ast);
 
 }  // namespace parser
 }  // namespace parser

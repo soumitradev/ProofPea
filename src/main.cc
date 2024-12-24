@@ -41,7 +41,7 @@ int main() {
   logger::Logger::dispatchLog(
       logger::infoLog{log : "Tokens detected: " + lexemes.str()});
 
-  const auto syntaxTree = new parser::parser::AST();
+  const auto syntaxTree = std::make_shared<parser::parser::AST>();
   const auto syntaxTreeResult = syntaxTree->parseAST(tokens);
   tokens.clear();
   if (std::holds_alternative<error::parser::unexpected_token>(
@@ -52,15 +52,15 @@ int main() {
     return 1;
   }
 
-  const auto copySyntaxTree = parser::parser::AST::copy(syntaxTree);
-  const auto copyCopySyntaxTree = parser::parser::AST::copy(copySyntaxTree);
-  parser::parser::deallocAST(syntaxTree);
+  const auto copySyntaxTree = parser::parser::AST::copy(syntaxTree.get());
+  const auto copyCopySyntaxTree =
+      parser::parser::AST::copy(copySyntaxTree.get());
 
-  debug::ast::printAST(copySyntaxTree, false, (char*)"ast.svg");
-  debug::ast::printAST(copyCopySyntaxTree, false, (char*)"ast.svg");
+  debug::ast::printAST(copySyntaxTree.get(), false, (char*)"ast.svg");
+  debug::ast::printAST(copyCopySyntaxTree.get(), false, (char*)"ast.svg");
 
   const auto truthTableResult =
-      truth_table::tabulator::printTruthTable(copySyntaxTree);
+      truth_table::tabulator::printTruthTable(copySyntaxTree.get());
   if (std::holds_alternative<error::eval::unexpected_node>(truthTableResult)) {
     const auto error = std::get<error::eval::unexpected_node>(truthTableResult);
     logger::Logger::dispatchLog(logger::errorLog{error : error});
@@ -74,7 +74,7 @@ int main() {
   }
 
   const auto copyTruthTableResult =
-      truth_table::tabulator::printTruthTable(copyCopySyntaxTree);
+      truth_table::tabulator::printTruthTable(copyCopySyntaxTree.get());
   if (std::holds_alternative<error::eval::unexpected_node>(
           copyTruthTableResult)) {
     const auto error =
@@ -90,11 +90,9 @@ int main() {
     return 1;
   }
 
-  parser::parser::deallocAST(copySyntaxTree);
-
-  debug::ast::printAST(copyCopySyntaxTree, false, (char*)"ast.svg");
+  debug::ast::printAST(copyCopySyntaxTree.get(), false, (char*)"ast.svg");
   const auto cnfTransformResult =
-      checker::validity::checkValidity(copyCopySyntaxTree);
+      checker::validity::checkValidity(copyCopySyntaxTree.get());
 
   if (std::holds_alternative<error::eval::unexpected_node>(
           cnfTransformResult)) {
@@ -115,10 +113,10 @@ int main() {
     logger::Logger::dispatchLog(logger::errorLog{error : error});
   }
 
-  debug::ast::printAST(copyCopySyntaxTree, false, (char*)"ast.svg");
+  debug::ast::printAST(copyCopySyntaxTree.get(), false, (char*)"ast.svg");
 
   const auto copyTruthTableCNFResult =
-      truth_table::tabulator::printTruthTable(copyCopySyntaxTree);
+      truth_table::tabulator::printTruthTable(copyCopySyntaxTree.get());
   if (std::holds_alternative<error::eval::unexpected_node>(
           copyTruthTableCNFResult)) {
     const auto error =
@@ -180,7 +178,7 @@ int main() {
     return 125;
   }
 
-  const auto otherTree = new parser::parser::AST();
+  const auto otherTree = std::make_shared<parser::parser::AST>();
   const auto otherTreeResult = otherTree->parseAST(tokens2);
   tokens2.clear();
   if (std::holds_alternative<error::parser::unexpected_token>(
@@ -191,8 +189,8 @@ int main() {
     return 1;
   }
 
-  const auto equivalenceResult =
-      checker::equivalence::checkEquivalence(copyCopySyntaxTree, otherTree);
+  const auto equivalenceResult = checker::equivalence::checkEquivalence(
+      copyCopySyntaxTree.get(), otherTree.get());
   if (std::holds_alternative<error::eval::unexpected_node>(equivalenceResult)) {
     const auto error =
         std::get<error::eval::unexpected_node>(equivalenceResult);
@@ -231,8 +229,5 @@ int main() {
   equivalenceLog << "The formulae are "
                  << (equivalent ? "equivalent" : "NOT equivalent");
   logger::Logger::dispatchLog(logger::infoLog{log : equivalenceLog.str()});
-
-  parser::parser::deallocAST(otherTree);
-  parser::parser::deallocAST(copyCopySyntaxTree);
   return 0;
 }

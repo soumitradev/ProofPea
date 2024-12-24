@@ -15,16 +15,16 @@ namespace tabulator {
 std::variant<std::vector<std::string>, error::eval::unexpected_node,
              error::eval::mismatched_atoms>
 constructTruthTable(std::map<std::vector<bool>, bool>& table,
-                    parser::parser::AST* ast);
+                    const parser::parser::AST* ast);
 
 std::variant<std::vector<std::string>, error::eval::unexpected_node,
              error::eval::mismatched_atoms>
 constructPartialTruthTable(
-    std::map<std::vector<bool>, bool>& table, parser::parser::AST* ast,
-    const std::set<const parser::parser::Node*>& skippedNodes);
+    std::map<std::vector<bool>, bool>& table, const parser::parser::AST* ast,
+    const std::set<std::shared_ptr<parser::parser::Node>>& skippedNodes);
 
 std::variant<bool, error::eval::unexpected_node, error::eval::mismatched_atoms>
-printTruthTable(parser::parser::AST* ast);
+printTruthTable(const parser::parser::AST* ast);
 }  // namespace tabulator
 }  // namespace truth_table
 

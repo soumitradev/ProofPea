@@ -3,10 +3,12 @@
 namespace checker {
 namespace horn_satisfiability {
 
-void populateHornClauses(parser::parser::Node* node,
-                         std::vector<parser::parser::BinaryOperator*>& result) {
+void populateHornClauses(
+    std::shared_ptr<parser::parser::Node> node,
+    std::vector<std::shared_ptr<parser::parser::BinaryOperator>>& result) {
   if (node->type == parser::parser::NodeType::BINARY) {
-    const auto binaryOp = std::get<parser::parser::BinaryOperator*>(node->node);
+    const auto binaryOp =
+        std::get<std::shared_ptr<parser::parser::BinaryOperator>>(node->node);
     if (binaryOp->op->type == util::symbols::CONJUNCT) {
       populateHornClauses(binaryOp->left, result);
       populateHornClauses(binaryOp->right, result);
@@ -17,8 +19,8 @@ void populateHornClauses(parser::parser::Node* node,
 }
 
 std::variant<bool, error::horn::invalid_horn_formula> allLeftMarkedRecursive(
-    parser::parser::BinaryOperator* op,
-    std::unordered_set<parser::parser::Node*>& marked) {
+    std::shared_ptr<parser::parser::BinaryOperator> op,
+    std::unordered_set<std::shared_ptr<parser::parser::Node>>& marked) {
   if ((op->right->type == parser::parser::NodeType::ABSOLUTE) ||
       (op->right->type == parser::parser::NodeType::ATOM)) {
     // Have we reached the end?
@@ -33,7 +35,8 @@ std::variant<bool, error::horn::invalid_horn_formula> allLeftMarkedRecursive(
           "Invalid Horn formula passed to allLeftMarkedRecursive"};
     }
     const auto leftOp =
-        std::get<parser::parser::BinaryOperator*>(op->left->node);
+        std::get<std::shared_ptr<parser::parser::BinaryOperator>>(
+            op->left->node);
     if (marked.find(op->right) == marked.end()) return false;
     return allLeftMarkedRecursive(leftOp, marked);
   }
@@ -47,7 +50,8 @@ std::variant<bool, error::horn::invalid_horn_formula> allLeftMarkedRecursive(
           "Invalid Horn formula passed to allLeftMarkedRecursive"};
     }
     const auto rightOp =
-        std::get<parser::parser::BinaryOperator*>(op->right->node);
+        std::get<std::shared_ptr<parser::parser::BinaryOperator>>(
+            op->right->node);
     return allLeftMarkedRecursive(rightOp, marked);
   }
 
@@ -56,8 +60,8 @@ std::variant<bool, error::horn::invalid_horn_formula> allLeftMarkedRecursive(
 }
 
 std::variant<bool, error::horn::invalid_horn_formula> allLeftMarked(
-    parser::parser::BinaryOperator* impl,
-    std::unordered_set<parser::parser::Node*>& marked) {
+    std::shared_ptr<parser::parser::BinaryOperator> impl,
+    std::unordered_set<std::shared_ptr<parser::parser::Node>>& marked) {
   if (((impl->right->type != parser::parser::NodeType::ABSOLUTE) &&
        (impl->right->type != parser::parser::NodeType::ATOM)) ||
       ((impl->left->type != parser::parser::NodeType::BINARY) &&
@@ -70,7 +74,8 @@ std::variant<bool, error::horn::invalid_horn_formula> allLeftMarked(
       (impl->left->type == parser::parser::NodeType::ATOM))
     return (marked.find(impl->left) != marked.end());
 
-  const auto left = std::get<parser::parser::BinaryOperator*>(impl->left->node);
+  const auto left = std::get<std::shared_ptr<parser::parser::BinaryOperator>>(
+      impl->left->node);
   return allLeftMarkedRecursive(left, marked);
 }
 
@@ -80,13 +85,11 @@ std::variant<bool, error::horn::invalid_horn_formula> checkHornSatisfiability(
     return error::horn::invalid_horn_formula{
         "Invalid Horn formula passed to checkHornSatisfiability"};
 
-  std::unordered_set<parser::parser::Node*> marked;
-  std::vector<parser::parser::BinaryOperator*> clauses;
+  std::unordered_set<std::shared_ptr<parser::parser::Node>> marked;
+  std::vector<std::shared_ptr<parser::parser::BinaryOperator>> clauses;
   populateHornClauses(ast->root, clauses);
 
-  // Make sure absolute maps are correct
-  transformer::common::rebuildASTMaps(ast);
-
+  // Implicitly assumes that the ast maps are correct
   const auto trueResult = ast->absolutes.find("1");
   const auto falseResult = ast->absolutes.find("0");
 

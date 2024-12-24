@@ -8,7 +8,7 @@ namespace transformer {
 namespace common {
 
 std::variant<bool, error::eval::unexpected_node> rebuildASTMaps(
-    parser::parser::AST* ast);
+    std::shared_ptr<parser::parser::AST> ast);
 
 }  // namespace common
 }  // namespace transformer

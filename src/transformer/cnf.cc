@@ -3,18 +3,20 @@
 namespace transformer {
 namespace cnf {
 
-bool distributivityTransform(parser::parser::Node* node,
-                             parser::parser::AST* ast) {
-  const auto nodeOp = std::get<parser::parser::BinaryOperator*>(node->node);
+bool distributivityTransform(std::shared_ptr<parser::parser::Node> node,
+                             std::shared_ptr<parser::parser::AST> ast) {
+  const auto nodeOp =
+      std::get<std::shared_ptr<parser::parser::BinaryOperator>>(node->node);
   if (nodeOp->left->type == parser::parser::NodeType::BINARY) {
     const auto leftNode =
-        std::get<parser::parser::BinaryOperator*>(nodeOp->left->node);
+        std::get<std::shared_ptr<parser::parser::BinaryOperator>>(
+            nodeOp->left->node);
     if (leftNode->op->type == util::symbols::CONJUNCT) {
       nodeOp->op->type = util::symbols::CONJUNCT;
       nodeOp->op->lexeme = "*";
 
       const auto rightCopy = parser::parser::AST::copyNode(
-          nodeOp->right, ast->tokens, ast->atoms, ast->absolutes);
+          nodeOp->right.get(), ast->tokens, ast->atoms, ast->absolutes);
       if (rightCopy == nullptr) {
         logger::Logger::dispatchLog(logger::errorLog{
           error : error::unknown::unknown_error{
@@ -31,10 +33,10 @@ bool distributivityTransform(parser::parser::Node* node,
 
       const auto newRightToken = std::make_shared<parser::tokenizer::Token>(
           util::symbols::DISJUNCT, "+", 0);
-      const auto newRightOp = new parser::parser::BinaryOperator{
-          newRightToken, leftRightChild, nodeOp->right};
-      const auto newRightNode =
-          new parser::parser::Node{parser::parser::BINARY, node, newRightOp};
+      const auto newRightNode = std::make_shared<parser::parser::Node>(
+          parser::parser::BINARY, node,
+          std::make_shared<parser::parser::BinaryOperator>(
+              newRightToken, leftRightChild, nodeOp->right));
       ast->tokens.push_back(newRightToken);
       nodeOp->right->parent = newRightNode;
       nodeOp->right = newRightNode;
@@ -52,13 +54,14 @@ bool distributivityTransform(parser::parser::Node* node,
 
   if (nodeOp->right->type == parser::parser::NodeType::BINARY) {
     const auto rightNode =
-        std::get<parser::parser::BinaryOperator*>(nodeOp->right->node);
+        std::get<std::shared_ptr<parser::parser::BinaryOperator>>(
+            nodeOp->right->node);
     if (rightNode->op->type == util::symbols::CONJUNCT) {
       nodeOp->op->type = util::symbols::CONJUNCT;
       nodeOp->op->lexeme = "*";
 
       const auto leftCopy = parser::parser::AST::copyNode(
-          nodeOp->left, ast->tokens, ast->atoms, ast->absolutes);
+          nodeOp->left.get(), ast->tokens, ast->atoms, ast->absolutes);
       if (leftCopy == nullptr) {
         logger::Logger::dispatchLog(logger::errorLog{
           error : error::unknown::unknown_error{
@@ -76,10 +79,10 @@ bool distributivityTransform(parser::parser::Node* node,
       const auto newLeftToken = std::make_shared<parser::tokenizer::Token>(
           util::symbols::DISJUNCT, "+", 0);
       ast->tokens.push_back(newLeftToken);
-      const auto newLeftOp = new parser::parser::BinaryOperator{
-          newLeftToken, rightLeftChild, nodeOp->left};
-      const auto newLeftNode =
-          new parser::parser::Node{parser::parser::BINARY, node, newLeftOp};
+      const auto newLeftNode = std::make_shared<parser::parser::Node>(
+          parser::parser::BINARY, node,
+          std::make_shared<parser::parser::BinaryOperator>(
+              newLeftToken, rightLeftChild, nodeOp->left));
       nodeOp->left->parent = newLeftNode;
       nodeOp->left = newLeftNode;
       rightLeftChild->parent = newLeftNode;
@@ -98,29 +101,32 @@ bool distributivityTransform(parser::parser::Node* node,
 }
 
 std::variant<bool, error::eval::unexpected_node> transformToCNFRecursive(
-    parser::parser::Node* node, parser::parser::AST* ast) {
+    std::shared_ptr<parser::parser::Node> node,
+    std::shared_ptr<parser::parser::AST> ast) {
   if (node->type == parser::parser::NodeType::ABSOLUTE) {
-    const auto parserNode = std::get<parser::parser::Absolute*>(node->node);
+    const auto parserNode =
+        std::get<std::shared_ptr<parser::parser::Absolute>>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{"Identified ABSOLUTE node " +
                                                  parserNode->token->lexeme +
                                                  ", ignoring for CNF"});
     return true;
   } else if (node->type == parser::parser::NodeType::ATOM) {
-    const auto parserNode = std::get<parser::parser::Atom*>(node->node);
+    const auto parserNode =
+        std::get<std::shared_ptr<parser::parser::Atom>>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{"Identified ATOM node " +
                                                  parserNode->token->lexeme +
                                                  ", ignoring for CNF"});
     return true;
   } else if (node->type == parser::parser::NodeType::UNARY) {
     const auto parserNode =
-        std::get<parser::parser::UnaryOperator*>(node->node);
+        std::get<std::shared_ptr<parser::parser::UnaryOperator>>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{"Identified UNARY node " +
                                                  parserNode->op->lexeme +
                                                  ", ignoring for CNF"});
     return true;
   } else if (node->type == parser::parser::NodeType::BINARY) {
     const auto parserNode =
-        std::get<parser::parser::BinaryOperator*>(node->node);
+        std::get<std::shared_ptr<parser::parser::BinaryOperator>>(node->node);
     logger::Logger::dispatchLog(logger::debugLog{"Identified BINARY node " +
                                                  parserNode->op->lexeme +
                                                  " while checking for CNF"});
@@ -206,7 +212,7 @@ std::variant<bool, error::eval::unexpected_node> transformToCNFRecursive(
 }
 
 std::variant<bool, error::eval::unexpected_node> transformToCNF(
-    parser::parser::AST* ast) {
+    std::shared_ptr<parser::parser::AST> ast) {
   logger::Logger::dispatchLog(logger::debugLog{
       "Calling NNF transformation before running CNF transformer"});
   const auto nnfResult = transformer::nnf::transformToNNF(ast);

@@ -2,7 +2,7 @@
 
 namespace logger {
 
-Logger* Logger::instance = nullptr;
+std::unique_ptr<Logger> Logger::instance = nullptr;
 Output Logger::output = Output::CONSOLE;
 Level Logger::minimumLogLevel = Level::INFO;
 std::filesystem::path Logger::logFilePath = std::filesystem::path();

@@ -1,8 +1,7 @@
 #include <main.h>
 
 int main() {
-  const logger::Logger* logger =
-      logger::Logger::initLogger(logger::Level::INFO);
+  logger::Logger::initLogger(logger::Level::INFO);
 
   logger::Logger::dispatchLog(logger::infoLog{log : "Logger Initialized!"});
 
@@ -234,6 +233,5 @@ int main() {
 
   parser::parser::deallocAST(otherTree);
   parser::parser::deallocAST(copyCopySyntaxTree);
-  logger::Logger::freeLogger();
   return 0;
 }

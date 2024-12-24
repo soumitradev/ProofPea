@@ -149,6 +149,7 @@ void renderASTRecursive(const Agraph_t *graph, const parser::parser::Node *node,
 
 void printAST(const parser::parser::AST *ast, bool renderParentEdge,
               char *filepath) {
+  return;
   // TODO: Track errors in this function
   const auto ctx = graphvizInit(filepath);
 

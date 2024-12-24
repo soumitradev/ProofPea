@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <variant>
 
 namespace logger {
@@ -38,14 +39,11 @@ struct errorLog {
 
 class Logger {
  private:
-  static Logger* instance;
+  static std::unique_ptr<Logger> instance;
   static Output output;
   static Level minimumLogLevel;
   static std::filesystem::path logFilePath;
 
-  Logger(Level minimumLogLevel);
-  Logger(Output output, std::filesystem::path logFilePath,
-         Level minimumLogLevel);
   static void writeLog(std::string log) {
     if (output == Output::CONSOLE || output == Output::BOTH) {
       std::cout << log << std::endl;
@@ -63,29 +61,20 @@ class Logger {
   }
 
  public:
+  Logger(Level minimumLogLevel);
+  Logger(Output output, std::filesystem::path logFilePath,
+         Level minimumLogLevel);
   Logger(const Logger& obj) = delete;
-  static Logger* freeLogger() {
-    if (instance != nullptr) {
-      delete instance;
-    }
-    return nullptr;
-  }
-  static Logger* initLogger(Level minimumLogLevel) {
+  static void initLogger(Level minimumLogLevel) {
     if (instance == nullptr) {
-      instance = new Logger(minimumLogLevel);
-      return instance;
-    } else {
-      return instance;
+      instance = std::make_unique<Logger>(minimumLogLevel);
     }
   }
 
-  static Logger* initLogger(Output output, std::filesystem::path logFile,
-                            Level minimumLogLevel) {
+  static void initLogger(Output output, std::filesystem::path logFile,
+                         Level minimumLogLevel) {
     if (instance == nullptr) {
-      instance = new Logger(output, logFile, minimumLogLevel);
-      return instance;
-    } else {
-      return instance;
+      instance.reset(new Logger(output, logFile, minimumLogLevel));
     }
   }
 

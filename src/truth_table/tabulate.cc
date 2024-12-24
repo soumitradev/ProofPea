@@ -4,21 +4,26 @@ namespace truth_table {
 namespace tabulator {
 
 std::variant<bool, error::eval::unexpected_node, error::eval::mismatched_atoms>
-generateStates(std::map<std::vector<bool>, bool>& table,
-               parser::parser::AST* ast,
-               std::vector<const parser::parser::Node*>& atomNodes,
-               std::vector<const parser::parser::Node*>::const_iterator atomPtr,
-               std::unordered_map<const parser::parser::Node*, bool>& state) {
+populatePartialTruthTable(
+    std::map<std::vector<bool>, bool>& table, parser::parser::AST* ast,
+    std::vector<const parser::parser::Node*>& atomNodes,
+    const std::set<const parser::parser::Node*>& skippedNodes,
+    std::vector<const parser::parser::Node*>::const_iterator atomPtr,
+    std::unordered_map<const parser::parser::Node*, bool>& state) {
   if (atomPtr == atomNodes.end()) {
     logger::Logger::dispatchLog(logger::debugLog{"All atoms assigned values"});
-    std::vector<bool> atomState(atomNodes.size());
+    std::vector<bool> atomState(atomNodes.size() - skippedNodes.size());
     std::ostringstream stateString;
     stateString << "[";
+    int atomIndex = 0;
     for (size_t i = 0; i < atomState.size(); i++) {
-      atomState[i] = state[atomNodes[i]];
+      if (skippedNodes.find(atomNodes[i]) != skippedNodes.end()) continue;
+      atomState[atomIndex] = state[atomNodes[i]];
       const auto node = std::get<parser::parser::Atom*>(atomNodes[i]->node);
-      stateString << node->token->lexeme << ": " << (atomState[i] ? "1" : "0")
-                  << ((i == atomState.size() - 1) ? "" : ", ");
+      stateString << node->token->lexeme << ": "
+                  << (atomState[atomIndex] ? "1" : "0")
+                  << ((atomIndex == atomState.size() - 1) ? "" : ", ");
+      atomIndex++;
     }
     stateString << "]";
 
@@ -41,12 +46,28 @@ generateStates(std::map<std::vector<bool>, bool>& table,
   }
 
   const auto node = std::get<parser::parser::Atom*>((*atomPtr)->node);
+  if (skippedNodes.find(*atomPtr) != skippedNodes.end()) {
+    logger::Logger::dispatchLog(logger::debugLog{
+        "Forcing skipped atom \"" + node->token->lexeme + "\" to false value"});
+    state[*atomPtr] = false;
+    const auto skippedStateResult = populatePartialTruthTable(
+        table, ast, atomNodes, skippedNodes, atomPtr + 1, state);
+    if (std::holds_alternative<error::eval::unexpected_node>(
+            skippedStateResult)) {
+      return std::get<error::eval::unexpected_node>(skippedStateResult);
+    }
+    if (std::holds_alternative<error::eval::mismatched_atoms>(
+            skippedStateResult)) {
+      return std::get<error::eval::mismatched_atoms>(skippedStateResult);
+    }
+    return true;
+  }
 
   logger::Logger::dispatchLog(logger::debugLog{
       "Setting atom \"" + node->token->lexeme + "\" to false"});
   state[*atomPtr] = false;
-  const auto falseStateResult =
-      generateStates(table, ast, atomNodes, atomPtr + 1, state);
+  const auto falseStateResult = populatePartialTruthTable(
+      table, ast, atomNodes, skippedNodes, atomPtr + 1, state);
   if (std::holds_alternative<error::eval::unexpected_node>(falseStateResult)) {
     return std::get<error::eval::unexpected_node>(falseStateResult);
   }
@@ -57,8 +78,8 @@ generateStates(std::map<std::vector<bool>, bool>& table,
   logger::Logger::dispatchLog(
       logger::debugLog{"Setting atom \"" + node->token->lexeme + "\" to true"});
   state[*atomPtr] = true;
-  const auto trueStateResult =
-      generateStates(table, ast, atomNodes, atomPtr + 1, state);
+  const auto trueStateResult = populatePartialTruthTable(
+      table, ast, atomNodes, skippedNodes, atomPtr + 1, state);
   if (std::holds_alternative<error::eval::unexpected_node>(trueStateResult)) {
     return std::get<error::eval::unexpected_node>(trueStateResult);
   }
@@ -69,10 +90,22 @@ generateStates(std::map<std::vector<bool>, bool>& table,
   return true;
 }
 
+// std::variant<bool, error::eval::unexpected_node,
+// error::eval::mismatched_atoms> populateTruthTable(
+//     std::map<std::vector<bool>, bool>& table, parser::parser::AST* ast,
+//     std::vector<const parser::parser::Node*>& atomNodes,
+//     std::vector<const parser::parser::Node*>::const_iterator atomPtr,
+//     std::unordered_map<const parser::parser::Node*, bool>& state) {
+//   const auto skipped = std::set<const parser::parser::Node*>();
+//   return populatePartialTruthTable(table, ast, atomNodes, skipped, atomPtr,
+//                                    state);
+// }
+
 std::variant<std::vector<std::string>, error::eval::unexpected_node,
              error::eval::mismatched_atoms>
-constructTruthTable(std::map<std::vector<bool>, bool>& table,
-                    parser::parser::AST* ast) {
+constructPartialTruthTable(
+    std::map<std::vector<bool>, bool>& table, parser::parser::AST* ast,
+    const std::set<const parser::parser::Node*>& skippedNodes) {
   logger::Logger::dispatchLog(
       logger::debugLog{"Constructing list of sorted atoms"});
   std::vector<std::pair<std::string, const parser::parser::Node*>> atoms;
@@ -94,8 +127,8 @@ constructTruthTable(std::map<std::vector<bool>, bool>& table,
 
   logger::Logger::dispatchLog(
       logger::debugLog{"Generating all possible atom states"});
-  const auto status =
-      generateStates(table, ast, atomNodes, atomNodes.begin(), state);
+  const auto status = populatePartialTruthTable(
+      table, ast, atomNodes, skippedNodes, atomNodes.begin(), state);
   if (std::holds_alternative<error::eval::unexpected_node>(status)) {
     return std::get<error::eval::unexpected_node>(status);
   }
@@ -103,6 +136,14 @@ constructTruthTable(std::map<std::vector<bool>, bool>& table,
     return std::get<error::eval::mismatched_atoms>(status);
   }
   return atomStrings;
+}
+
+std::variant<std::vector<std::string>, error::eval::unexpected_node,
+             error::eval::mismatched_atoms>
+constructTruthTable(std::map<std::vector<bool>, bool>& table,
+                    parser::parser::AST* ast) {
+  const auto skipped = std::set<const parser::parser::Node*>();
+  return constructPartialTruthTable(table, ast, skipped);
 }
 
 std::variant<bool, error::eval::unexpected_node, error::eval::mismatched_atoms>
@@ -113,8 +154,8 @@ printTruthTable(parser::parser::AST* ast) {
       truth_table::tabulator::constructTruthTable(table, ast);
   if (std::holds_alternative<error::eval::unexpected_node>(truthTableResult)) {
     return std::get<error::eval::unexpected_node>(truthTableResult);
-  }
-  if (std::holds_alternative<error::eval::mismatched_atoms>(truthTableResult)) {
+  } else if (std::holds_alternative<error::eval::mismatched_atoms>(
+                 truthTableResult)) {
     return std::get<error::eval::mismatched_atoms>(truthTableResult);
   }
   const auto atomList = std::get<std::vector<std::string>>(truthTableResult);

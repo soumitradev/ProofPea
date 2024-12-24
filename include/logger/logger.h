@@ -44,6 +44,9 @@ class Logger {
   static Level minimumLogLevel;
   static std::filesystem::path logFilePath;
 
+  Logger(Level minimumLogLevel);
+  Logger(Output output, std::filesystem::path logFilePath,
+         Level minimumLogLevel);
   static void writeLog(std::string log) {
     if (output == Output::CONSOLE || output == Output::BOTH) {
       std::cout << log << std::endl;
@@ -61,13 +64,10 @@ class Logger {
   }
 
  public:
-  Logger(Level minimumLogLevel);
-  Logger(Output output, std::filesystem::path logFilePath,
-         Level minimumLogLevel);
   Logger(const Logger& obj) = delete;
   static void initLogger(Level minimumLogLevel) {
     if (instance == nullptr) {
-      instance = std::make_unique<Logger>(minimumLogLevel);
+      instance.reset(new Logger(minimumLogLevel));
     }
   }
 
@@ -96,6 +96,7 @@ class Logger {
 
   static void dispatchLog(
       std::variant<debugLog, infoLog, warnLog, errorLog> log) {
+    if (instance == nullptr) return;
     const auto levelType = getLevel(log);
 
     if (std::holds_alternative<error::unknown::unknown_error>(levelType)) {

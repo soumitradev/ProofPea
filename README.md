@@ -1,6 +1,10 @@
-# [WIP] ProofPea
+# ProofPea
 
-A tool for performing some helpful operations on propositional logic formulae. The goal for this project is to tick the below boxes:
+This project has 2 parts: A library, and a CLI, that uses the library. The library is intended to be the main part of this project, while the CLI just serves as an example.
+
+## ProofPea Library
+
+A library for performing some helpful operations on propositional logic formulae. The goal for this library is to tick the below boxes:
 
 - [x] Check whether or not a propositional logic formula is well-formed or not
 - [x] Ensure the parser can handle associativity rules to handle formulae that aren't guaranteed to be well-bracketed
@@ -11,13 +15,33 @@ A tool for performing some helpful operations on propositional logic formulae. T
 - [x] Check if a propositional logic formula is in Horn form
 - [x] Check if a Horn formula is satisfiable or not
 - [x] Check the equivalence of two given formulae
+
+### Future Plans
+
+Since these features will take a long time to implement, they are planned for later, when I feel like it. I finished most of the above features around 25th Dec 2024, and so I will be taking a break from this project for a while.
+
 - [ ] Check the validity of a given sequent
 - [ ] Run performance tests on each of the modules, and try and optimize them as much as possible
 - [ ] (Not sure if this is even possible, but I think it is) Given a valid sequent, construct a proof for it (maybe not optimal, just a proof)
 - [ ] [Optional] Make a SAT solver
 - [ ] [Optional] Optimize the proof constructor by using Proof Search, similar to a kind of Prolog
 
-## Usage
+### Building
+
+> [!WARNING]  
+> You need to install the graphviz library `libgvc` to compile this from source, as the debug tool that renders ASTs uses this library. Please make sure that graphviz is installed and is included properly while compiling.
+
+I use `make` for compiling this thing:
+
+- `make all` - Compiles all the code, and spits out the library `.so` and `.a` files in the `build` folder
+- `make clean` - Deletes logs in the `logs` folder, and the library `.so` and `.a` files
+- `make cleaner` - Deletes logs in the `logs` folder, the library `.so` and `.a` files, and any intermediate object files that were compiled
+
+## [WIP] ProofPea CLI
+
+As of now, work on the CLI part of the project has not started, but there is some starter driver code for the library in the `cli` folder. The main goal of the CLI part of the project is to serve as documentation, and an example of the usage for the library.
+
+### Building
 
 > [!WARNING]  
 > You need to install the graphviz library `libgvc` to compile this from source, as the debug tool that renders ASTs uses this library. Please make sure that graphviz is installed and is included properly while compiling.
@@ -30,6 +54,10 @@ I use `make` for compiling this thing:
 - `make clean` - Deletes logs, and the executable
 - `make cleaner` - Deletes logs, the executable, and any object files that were compiled
 - `make valgrind` - Compiles all the code, makes an executable in the `build` folder, and runs it with [valgrind](https://valgrind.org/)
+
+## Documentation
+
+As of now, this project is not documented, but there is example driver code for using the library in the `cli` folder. I plan to use GitHub wiki pages to document this eventually.
 
 ## Syntax
 
